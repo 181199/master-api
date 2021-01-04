@@ -1,4 +1,4 @@
 package feature_extraction;
 
-public class CVE_TFIDF {
+public class Word2Vec {
 }
