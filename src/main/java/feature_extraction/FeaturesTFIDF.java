@@ -239,13 +239,10 @@ public class FeaturesTFIDF {
      */
     public static void main(String[] args) throws Exception {
 
-        //wicket=87, derby=93, camel=88, ambari=92, chromium=93, mozilla, comm, apache, odcv
-        String project = "derby";
-
-        String datafile = "/Users/anja/Desktop/master/api/files/cvsData.csv";
+        String datafile = "/Users/anja/Desktop/master/api/files/cveData.csv";
         String stopfile = "/Users/anja/Desktop/master/api/files/stopwords.txt";
         String unwantfile = "/Users/anja/Desktop/master/api/files/unwanted.txt";
-        String dictfile = "/Users/anja/Desktop/master/api/files/dictfile.txt";
+        String dictfile = "/Users/anja/Desktop/master/api/files/FeaturesTFIDF.txt";
 
         FeaturesTFIDF tfidf = new FeaturesTFIDF();
 
@@ -253,7 +250,7 @@ public class FeaturesTFIDF {
         List<String> unwanted = null;
         try {
             unwanted = tfidf.readStopwords(unwantfile);
-        } catch (FileNotFoundException e) {
+        }catch(FileNotFoundException e) {
 
         }
         tfidf.readData(datafile, unwanted, true);
@@ -261,13 +258,12 @@ public class FeaturesTFIDF {
 
         tfidf.computeAggregateTFIDF();
 
-        List<String> features100 = tfidf.getFeatures(100);  // we need top 100
+        List<String> features100 = tfidf.getFeatures(200);
 
         PrintWriter pw = new PrintWriter(dictfile);
         for(int i = 0; i < features100.size(); i++){
-            pw.append(features100.get(i));
+            pw.append(features100.get(i) + "\n");
         }
-        //pw.print(features100);
         pw.close();
         System.out.println(features100.size());
 
