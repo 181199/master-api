@@ -1,4 +1,4 @@
-package publicSources;
+package sources;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -8,20 +8,46 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.jsoup.Jsoup;
 
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
+import java.io.*;
 import java.net.URLEncoder;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 
 public class StackOverflow_API {
 
+    private static StringBuilder builder;
+
     public static void main(String[] args) throws UnsupportedEncodingException {
 
-        String tags = "java;security";
+        PrintWriter pw = null;
+        try {
+            pw = new PrintWriter(new File("./files/stackoverflowSBR.csv"));
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+        builder = new StringBuilder();
+        String columnNamesList = "Title;Id;Date;Description";
+        builder.append(columnNamesList +"\n");
 
+        String tags = "security";
+        String site = "stackoverflow";
+        int page = 1;
+
+        while(page <= 100) {
+            getResults(site, tags, page);
+            page++;
+        }
+
+        pw.write(builder.toString());
+        pw.close();
+        System.out.println("done!");
+    }
+
+    public static void getResults(String site, String tags, int page) throws UnsupportedEncodingException {
         HttpClient client = HttpClientBuilder.create().build();
-        HttpGet request = new HttpGet("https://api.stackexchange.com/2.2/questions?order=desc&sort=activity&tagged=" + URLEncoder.encode(tags, "UTF-8") + "&site=stackoverflow&filter=!--1nZwT3Ejsm");
+        HttpGet request = new HttpGet("https://api.stackexchange.com/2.2/questions?page=" + page + "&pagesize=100&order=desc&sort=activity&tagged=" + URLEncoder.encode(tags, "UTF-8") + "&site=" + site + "&filter=!--1nZwT3Ejsm");
 
         try {
             HttpResponse response = client.execute(request);
@@ -37,28 +63,44 @@ public class StackOverflow_API {
             for(int i = 0; i < tokenList.length(); i++){
                 JSONObject oj = tokenList.getJSONObject(i);
                 String title = oj.getString("title");
+                title = title.replace(";", "");
+
                 int id = oj.getInt("question_id");
                 int date = oj.getInt("creation_date");
                 Date time = new Date((long)date*1000);
 
+                String newTime = new SimpleDateFormat("dd-MM-yyyy").format(time);
+
                 String body = oj.getString("body");
+                String cleanText = html2text(body);
+                cleanText = cleanText.replace("\n", "").replace("\r", "").replace(";","");
 
-                System.out.println("Title: " + title + "\nId: " + id + "\nDate: " + time + "\nBody: " + body + "\n");
+                //System.out.println("Title: " + title + "\nId: " + id + "\nDate: " + newTime + "\nBody: " + cleanText + "\n");
 
-                int answerNumber = oj.getInt("answer_count");
-                if(answerNumber != 0) {
-                    JSONArray answers = oj.getJSONArray("answers");
+                // get answers to question
+//                int answerNumber = oj.getInt("answer_count");
+//                if(answerNumber != 0) {
+//                    JSONArray answers = oj.getJSONArray("answers");
+//
+//                    for(int j = 0; j < answerNumber; j++){
+//                        JSONObject answerObj = answers.getJSONObject(j);
+//                        String answer = answerObj.getString("body");
+//                        System.out.println("Answer " + (j+1) + ": " + answer);
+//                    }
+//                }
 
-                    for(int j = 0; j < answerNumber; j++){
-                        JSONObject answerObj = answers.getJSONObject(j);
-                        String answer = answerObj.getString("body");
-                        System.out.println("Answer " + (j+1) + ": " + answer);
-                    }
-                }
+                builder.append(title+";");
+                builder.append(id+";");
+                builder.append(newTime+";");
+                builder.append(cleanText+";");
+                builder.append('\n');
             }
-
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    public static String html2text(String html) {
+        return Jsoup.parse(html).text();
     }
 }
