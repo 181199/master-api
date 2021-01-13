@@ -2,6 +2,7 @@ package similarity;
 
 import java.io.*;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -32,6 +33,7 @@ public class Documents {
                 //sb.append(cleaned + "\n");
                 //System.out.println(cleaned);
 
+                if(i != 0) {
                     String[] tokenizedTerms = cleaned.replaceAll("[\\W&&[^\\s]]", "").split("\\W+");
                     for (String term : tokenizedTerms)    //avoid duplicate entries
                     {
@@ -41,7 +43,8 @@ public class Documents {
                         }
                     }
                     cveDocsArray.add(tokenizedTerms);
-                    i++;
+                }
+                i++;
             }
         }
     }
@@ -58,15 +61,17 @@ public class Documents {
                 //sb.append(cleaned + "\n");
                 //System.out.println(cleaned);
 
-                String[] tokenizedTerms = cleaned.replaceAll("[\\W&&[^\\s]]", "").split("\\W+");
-                for (String term : tokenizedTerms)    //avoid duplicate entries
-                {
-                    if (!allBugTerms.contains(term)) {
-                        allBugTerms.add(term);
-                        //System.out.println(term);
+                if(i != 0) {
+                    String[] tokenizedTerms = cleaned.replaceAll("[\\W&&[^\\s]]", "").split("\\W+");
+                    for (String term : tokenizedTerms)    //avoid duplicate entries
+                    {
+                        if (!allBugTerms.contains(term)) {
+                            allBugTerms.add(term);
+                            //System.out.println(term);
+                        }
                     }
+                    bugsDocsArray.add(tokenizedTerms);
                 }
-                bugsDocsArray.add(tokenizedTerms);
                 i++;
             }
         }
@@ -93,16 +98,14 @@ public class Documents {
         }
     }
 
-    public void tfIdfCalculatorBugs(){
+    public void tfIdfCalculatorBugs() {
         double tf; //term frequency
         double idf; //inverse document frequency
         double tfidf; //term frequency inverse document frequency
-        for (String[] docTermsArray : bugsDocsArray)
-        {
+        for (String[] docTermsArray : bugsDocsArray) {
             double[] tfidfvectors = new double[allBugTerms.size()];
             int count = 0;
-            for (String terms : allBugTerms)
-            {
+            for (String terms : allBugTerms) {
                 tf = new TFIDFCalculator().tf(docTermsArray, terms);
                 idf = new TFIDFCalculator().idf(bugsDocsArray, terms);
                 tfidf = tf * idf;
@@ -125,10 +128,12 @@ public class Documents {
                 if (i != j)
                     cosine = new CosineSimilarity().cosineSimilarity(tfidfDocsVectorCve.get(i), tfidfDocsVectorBugs.get(j));
                     //System.out.println("between " + i + " and " + j + "  =  " + new CosineSimilarity().cosineSimilarity(tfidfDocsVectorBugs.get(i), tfidfDocsVectorCve.get(j)));
-                    if(cosine > score) {
-                        score = cosine;
-                        System.out.println(score);
-                    }
+
+                // use the highest score for each bug report
+                if (cosine > score) {
+                    score = cosine;
+                    System.out.println(score);
+                }
             }
             scores.add(score);
             score = 0.0;
@@ -138,34 +143,34 @@ public class Documents {
 
     public void appendToCsv(List<Double> tfidfScores, String columnName) throws IOException {
 
-        BufferedReader br=null;
-        BufferedWriter bw=null;
+        BufferedReader br = null;
+        BufferedWriter bw = null;
 
         try {
             File file = new File("/Users/anja/Desktop/master/api/files/test/stackoverflowSBR_small.csv");
             File file2 = new File("/Users/anja/Desktop/master/api/files/test/stackoverflowSBR_small_" + columnName + ".csv");//so the
             //names don't conflict or just use different folders
 
-            br = new BufferedReader(new InputStreamReader(new FileInputStream(file))) ;
+            br = new BufferedReader(new InputStreamReader(new FileInputStream(file)));
             bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file2)));
-            String line = null;
-            int i=0;
-            for ( line = br.readLine(); line != null; line = br.readLine(),i++)
-            {
-                bw.write(line + ";" + columnName + "\n");
-                for(int j = 0; j < tfidfScores.size(); j++) {
-                    String addedColumn = String.valueOf(tfidfScores.get(j));
-                    bw.write(line + ";" + addedColumn + "\n");
-                }
-                break;
-            }
+            String line = "";
 
-        }catch(Exception e){
+            int i = 0;
+            while ((line = br.readLine()) != null && i < tfidfScores.size()) {
+                if(i == 0){
+                    bw.write(line + ";" + columnName + "\n");
+                } else {
+                    String addedColumn = String.valueOf(tfidfScores.get(i));
+                    bw.write(line + addedColumn + "\n");
+                }
+                i++;
+            }
+        } catch (Exception e) {
             System.out.println(e);
-        }finally  {
-            if(br!=null)
+        } finally {
+            if (br != null)
                 br.close();
-            if(bw!=null)
+            if (bw != null)
                 bw.close();
         }
     }

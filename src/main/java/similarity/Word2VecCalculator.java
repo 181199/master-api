@@ -8,10 +8,7 @@ import org.nd4j.linalg.factory.Nd4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -28,25 +25,6 @@ public class Word2VecCalculator {
     public static void main(String[] args) throws Exception {
 
         Word2Vec word2vec = getWord2Vec("/Users/anja/Desktop/master/api/files/word2vec_model.txt");
-//        Collection<String> labels = normalizeText("Dont use nsIBrowserInstance in Firefox");
-//        Collection<String> labels2 = normalizeText("Checkbox Javascript and some Firefox extensions");
-//
-//        INDArray input1_vector = getVector(labels, word2vec);
-//        INDArray input2_vector = getVector(labels2, word2vec);
-//
-//        int vectorsize = word2vec.getWordVector(word2vec.vocab().wordAtIndex(0)).length;
-//
-//        System.out.println("Vector size = "+vectorsize);
-//        System.out.println(input1_vector.getRow(0).columns());
-//        System.out.println(input1_vector.getRow(0).getDouble(0));
-//        System.out.println(input1_vector.rows());
-//
-//        double dot_product = Nd4j.getBlasWrapper().dot(input1_vector, input2_vector);
-//
-//        double cosine_sim = cosine_similarity(input1_vector.toDoubleVector(), input2_vector.toDoubleVector(), dot_product);
-//        System.out.println("Cosine similarity: " + cosine_sim);
-//        double cossim = word2vec.similarity("vulnerability", "execution");
-//        System.out.println(cossim);
 
         List<Collection<String>> cveSentences = new ArrayList<>();
         getSentences("/Users/anja/Desktop/master/api/files/test/cveData.csv", cveSentences);
@@ -57,7 +35,10 @@ public class Word2VecCalculator {
         getCosineSimilarity(cveSentences, bugSentences, word2vec);
     }
 
-    public static void getCosineSimilarity(List<Collection<String>> cve, List<Collection<String>> bugs, Word2Vec word2vec) {
+    public static void getCosineSimilarity(List<Collection<String>> cve, List<Collection<String>> bugs, Word2Vec word2vec) throws IOException {
+        List<Double> scores = new ArrayList<Double>();
+        double score = 0.0;
+        double cosine_sim = 0.0;
         for(int i = 0; i < cve.size(); i++){
             for(int j = 0; j < bugs.size(); j++){
                 INDArray input1_vector = getVector(cve.get(i), word2vec);
@@ -65,10 +46,19 @@ public class Word2VecCalculator {
 
                 double dot_product = Nd4j.getBlasWrapper().dot(input1_vector, input2_vector);
 
-                double cosine_sim = cosine_similarity(input1_vector.toDoubleVector(), input2_vector.toDoubleVector(), dot_product);
-                System.out.println("Cosine similarity: " + cosine_sim);
+                cosine_sim = cosine_similarity(input1_vector.toDoubleVector(), input2_vector.toDoubleVector(), dot_product);
+                //System.out.println("Cosine similarity: " + cosine_sim);
+
+                // use the highest score for each bug report
+                if(cosine_sim > score){
+                    score = cosine_sim;
+                }
             }
+            scores.add(score);
+            System.out.println(score);
+            score = 0.0;
         }
+        appendToCsv(scores, "word2vec");
     }
 
     public static void getSentences(String file, List<Collection<String>> sentences) throws IOException {
@@ -79,8 +69,11 @@ public class Word2VecCalculator {
                 String[] cols = line.split(";");
                 String cleaned = cleanText(cols[1]);
 
-                Collection<String> labels = normalizeText(cleaned);
-                sentences.add(labels);
+                if(i != 0) {
+                    Collection<String> labels = normalizeText(cleaned);
+                    sentences.add(labels);
+                }
+                i++;
             }
         }
     }
@@ -137,7 +130,7 @@ public class Word2VecCalculator {
         }
 
         // average of array
-        return Nd4j.create(double_array_avg(sentence_vector, labels.size()));
+        return Nd4j.create(double_array_avg(sentence_vector, i));
     }
 
     public static double cosine_similarity(double[] input1_vector, double[] input2_vector, double dot_product)
@@ -166,27 +159,46 @@ public class Word2VecCalculator {
     public static double[] double_array_avg(double[] sentence_vector, int size){
         double[] avg = new double[sentence_vector.length];
         for (int i=0; i < size; i++) {
-            avg[i] = sentence_vector[i]/size;
+            try {
+                avg[i] = sentence_vector[i] / size;
+            } catch(ArrayIndexOutOfBoundsException exception) {
+            }
         }
 
         return avg;
     }
 
-    public static INDArray getVectorGoogle(Collection<String> labels, Word2Vec word2Vec){
-        double sentence_vector[] = new double[300];
-        // initializing the vector
-        Arrays.fill(sentence_vector,0d);
-        int i=0;
-        for(String word: labels)
-        {
-            // make vector embeddings for a one word at a time
-            double[] word_vec = word2Vec.getWordVector(word);
-            // array sum of vectors
-            sentence_vector = (i==0) ? word_vec : double_array_sum(word_vec,sentence_vector);
-            ++i;
-        }
+    public static void appendToCsv(List<Double> cosineScores, String columnName) throws IOException {
 
-        // average of array
-        return Nd4j.create(double_array_avg(sentence_vector, labels.size()));
+        BufferedReader br=null;
+        BufferedWriter bw=null;
+
+        try {
+            File file = new File("/Users/anja/Desktop/master/api/files/test/stackoverflowSBR_small_tfidf.csv");
+            File file2 = new File("/Users/anja/Desktop/master/api/files/test/stackoverflowSBR_small_tfidf_" + columnName + ".csv");//so the
+            //names don't conflict or just use different folders
+
+            br = new BufferedReader(new InputStreamReader(new FileInputStream(file))) ;
+            bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file2)));
+            String line = "";
+
+            int i = 0;
+            while ((line = br.readLine()) != null && i < cosineScores.size()) {
+                if(i == 0){
+                    bw.write(line + ";" + columnName + "\n");
+                } else {
+                    String addedColumn = String.valueOf(cosineScores.get(i));
+                    bw.write(line + ";" + addedColumn + "\n");
+                }
+                i++;
+            }
+        }catch(Exception e){
+            System.out.println(e);
+        }finally  {
+            if(br!=null)
+                br.close();
+            if(bw!=null)
+                bw.close();
+        }
     }
 }
