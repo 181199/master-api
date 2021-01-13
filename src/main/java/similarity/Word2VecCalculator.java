@@ -120,13 +120,18 @@ public class Word2VecCalculator {
         int i=0;
         for(String word: labels)
         {
-            // make vector embeddings for a one word at a time
-            double[] word_vec = word2Vec.getWordVector(word);
-            // array sum of vectors
-            if(word_vec != null) {
-                sentence_vector = (i == 0) ? word_vec : double_array_sum(word_vec, sentence_vector);
+            try {
+                // make vector embeddings for a one word at a time
+                double[] word_vec = word2Vec.getWordVector(word);
+                //System.out.println("word_vec_len: " + word_vec.length);
+                // array sum of vectors
+                if (word_vec != null) {
+                    sentence_vector = (i == 0) ? word_vec : double_array_sum(word_vec, sentence_vector);
+                }
+                ++i;
+            } catch (Exception e){
+                System.out.println("Exception: " + word);
             }
-            ++i;
         }
 
         // average of array
@@ -158,13 +163,9 @@ public class Word2VecCalculator {
 
     public static double[] double_array_avg(double[] sentence_vector, int size){
         double[] avg = new double[sentence_vector.length];
-        for (int i=0; i < size; i++) {
-            try {
-                avg[i] = sentence_vector[i] / size;
-            } catch(ArrayIndexOutOfBoundsException exception) {
-            }
+        for (int i=0; i < avg.length; i++) {
+            avg[i] = sentence_vector[i] / size;
         }
-
         return avg;
     }
 
