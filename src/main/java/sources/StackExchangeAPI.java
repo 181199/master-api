@@ -23,27 +23,27 @@ public class StackExchangeAPI {
 
         PrintWriter pw = null;
         try {
-            pw = new PrintWriter(new File("./files/stackoverflowNSBR.csv"));
+            pw = new PrintWriter(new File("./files/stackoverflowSBR_small.csv"));
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         }
         builder = new StringBuilder();
-        String columnNamesList = "Title;Id;Date;Description";
+        String columnNamesList = "Title;Description;Id;Date";
         builder.append(columnNamesList +"\n");
 
         String tags = "security";
         String site = "stackoverflow";
         int page = 1;
 
-//        while(page <= 100) {
-//            getSBRs(site, tags, page);
-//            page++;
-//        }
-
-        while(page <= 2){
-            getNSBRs(site, page);
+        while(page <= 5) {
+            getSBRs(site, tags, page);
             page++;
         }
+
+//        while(page <= 2){
+//            getNSBRs(site, page);
+//            page++;
+//        }
 
         pw.write(builder.toString());
         pw.close();
@@ -95,9 +95,9 @@ public class StackExchangeAPI {
 //                }
 
                 builder.append(title+";");
+                builder.append(cleanText+";");
                 builder.append(id+";");
                 builder.append(newTime+";");
-                builder.append(cleanText+";");
                 builder.append('\n');
             }
         } catch (IOException e) {
@@ -160,9 +160,9 @@ public class StackExchangeAPI {
 
                 if(!security) {
                     builder.append(title + ";");
+                    builder.append(cleanText + ";");
                     builder.append(id + ";");
                     builder.append(newTime + ";");
-                    builder.append(cleanText + ";");
                     builder.append('\n');
                 }
 
