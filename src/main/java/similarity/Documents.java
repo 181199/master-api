@@ -2,26 +2,17 @@ package similarity;
 
 import java.io.*;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.regex.Pattern;
 
 
 public class Documents {
 
-    //This variable will hold all terms of each document in an array.
-    private List<String[]> cveDocsArray = new ArrayList<String[]>();
-    private List<String[]> bugsDocsArray = new ArrayList<String[]>();
-    private List<String[]> termsDocsArray = new ArrayList<String[]>();
-    private List<String> allTerms = new ArrayList<String>(); //to hold all terms
-    private List<String> allCveTerms = new ArrayList<String>(); //to hold all terms
-    private List<String> allBugTerms = new ArrayList<String>(); //to hold all terms
-    private List<double[]> tfidfDocsVectorCve = new ArrayList<double[]>();
-    private List<double[]> tfidfDocsVectorBugs = new ArrayList<double[]>();
-
     // Method to read files and store in array.
 
-    public void parseCveFile(String filePath) throws IOException {
+    public List<String[]> getDocsArrayFromCsv(String filePath) throws IOException {
+
+        List<String[]> cveDocsArray = new ArrayList<String[]>();
 
         try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
 
@@ -30,109 +21,118 @@ public class Documents {
             while ((line = br.readLine()) != null && i < 100) {
                 String[] cols = line.split(";");
                 String cleaned = cleanText(cols[1]);
-                //sb.append(cleaned + "\n");
-                //System.out.println(cleaned);
 
                 if(i != 0) {
                     String[] tokenizedTerms = cleaned.replaceAll("[\\W&&[^\\s]]", "").split("\\W+");
-                    for (String term : tokenizedTerms)    //avoid duplicate entries
-                    {
-                        if (!allCveTerms.contains(term)) {
-                            allCveTerms.add(term);
-                            //System.out.println(term);
-                        }
-                    }
                     cveDocsArray.add(tokenizedTerms);
                 }
                 i++;
             }
         }
+        return cveDocsArray;
     }
 
-    public void parseBugFile(String filePath) throws IOException {
+    public List<String> getTermsFromFile(String filePath) throws IOException {
+
+        List<String> allTerms = new ArrayList<String>();
 
         try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
 
             String line = "";
-            int i = 0;
-            while ((line = br.readLine()) != null && i < 100) {
-                String[] cols = line.split(";");
-                String cleaned = cleanText(cols[1]);
-                //sb.append(cleaned + "\n");
-                //System.out.println(cleaned);
-
-                if(i != 0) {
-                    String[] tokenizedTerms = cleaned.replaceAll("[\\W&&[^\\s]]", "").split("\\W+");
-                    for (String term : tokenizedTerms)    //avoid duplicate entries
-                    {
-                        if (!allBugTerms.contains(term)) {
-                            allBugTerms.add(term);
-                            //System.out.println(term);
-                        }
-                    }
-                    bugsDocsArray.add(tokenizedTerms);
-                }
-                i++;
+            while ((line = br.readLine()) != null) {
+                allTerms.add(line);
+                //System.out.println(line);
             }
         }
+        return allTerms;
     }
 
     /**
      * Method to create termVector according to its tfidf score.
      */
-    public void tfIdfCalculatorCve() {
+    public List<double[]> tfIdfCalculator(List<String[]> docsArray, List<String> allTerms) {
+
+        List<double[]> tfidfDocsVector = new ArrayList<>();
         double tf; //term frequency
         double idf; //inverse document frequency
         double tfidf; //term frequency inverse document frequency
-        for (String[] docTermsArray : cveDocsArray) {
-            double[] tfidfvectors = new double[allCveTerms.size()];
+        for (String[] docTermsArray : docsArray) {
+            double[] tfidfvectors = new double[allTerms.size()];
             int count = 0;
-            for (String terms : allCveTerms) {
+            for (String terms : allTerms) {
                 tf = new TFIDFCalculator().tf(docTermsArray, terms);
-                idf = new TFIDFCalculator().idf(cveDocsArray, terms);
+                idf = new TFIDFCalculator().idf(docsArray, terms);
+                if(idf == Double.POSITIVE_INFINITY){
+                    idf = 0.0;
+                }
                 tfidf = tf * idf;
                 tfidfvectors[count] = tfidf;
                 count++;
             }
-            tfidfDocsVectorCve.add(tfidfvectors);  //storing document vectors;
+            tfidfDocsVector.add(tfidfvectors);  //storing document vectors;
         }
+        return tfidfDocsVector;
     }
 
-    public void tfIdfCalculatorBugs() {
+    public void printDocumentVectors(String document, List<String> allTerms, List<String[]> docsArray){
         double tf; //term frequency
         double idf; //inverse document frequency
         double tfidf; //term frequency inverse document frequency
-        for (String[] docTermsArray : bugsDocsArray) {
-            double[] tfidfvectors = new double[allBugTerms.size()];
-            int count = 0;
-            for (String terms : allBugTerms) {
-                tf = new TFIDFCalculator().tf(docTermsArray, terms);
-                idf = new TFIDFCalculator().idf(bugsDocsArray, terms);
+
+        String[] s = document.split("\\W+"); // split on whitespace
+
+            for (String terms : allTerms) {
+                tf = new TFIDFCalculator().tf(s, terms);
+                idf = new TFIDFCalculator().idf(docsArray, terms);
+                if(idf == Double.POSITIVE_INFINITY){
+                    idf = 0.0;
+                }
                 tfidf = tf * idf;
-                tfidfvectors[count] = tfidf;
-                count++;
+                System.out.println(terms + ": " + tfidf);
             }
-            tfidfDocsVectorBugs.add(tfidfvectors);  //storing document vectors;
+    }
+
+    public double[] getDocumentVectors(String document, List<String> allTerms, List<String[]> docsArray){
+        double tf; //term frequency
+        double idf; //inverse document frequency
+        double tfidf; //term frequency inverse document frequency
+
+        String[] s = document.split("\\W+"); // split on whitespace
+        double[] tfidfvectors = new double[allTerms.size()];
+
+        int count = 0;
+        for (String terms : allTerms) {
+            tf = new TFIDFCalculator().tf(s, terms);
+            idf = new TFIDFCalculator().idf(docsArray, terms);
+            if(idf == Double.POSITIVE_INFINITY){
+                idf = 0.0;
+            }
+            tfidf = tf * idf;
+            tfidfvectors[count] = tfidf;
+            count++;
         }
+        return tfidfvectors;
+    }
+
+    public void getCosineSimilarityTwoDocuments(double[] document1, double[] document2){
+        System.out.println("Cosine similarity between doc1 and doc2: " + new CosineSimilarity().cosineSimilarity(document1, document2));
     }
 
     // Method to calculate cosine similarity between all the documents.
-
-    public void getCosineSimilarity() throws IOException {
-        CosineSimilarity c = new CosineSimilarity();
+    public void getCosineSimilarity(List<double[]> tfidfDocsVector1, List<double[]> tfidfDocsVector2) throws IOException {
         List<Double> scores = new ArrayList<Double>();
         double score = 0.0;
         double cosine = 0.0;
-        for (int i = 0; i < tfidfDocsVectorBugs.size(); i++) {
-            for (int j = 0; j < tfidfDocsVectorCve.size(); j++) {
+        for (int i = 0; i < tfidfDocsVector1.size(); i++) {
+            for (int j = 0; j < tfidfDocsVector2.size(); j++) {
                 if (i != j)
-                    cosine = new CosineSimilarity().cosineSimilarity(tfidfDocsVectorCve.get(i), tfidfDocsVectorBugs.get(j));
+                    cosine = new CosineSimilarity().cosineSimilarity(tfidfDocsVector1.get(i), tfidfDocsVector2.get(j));
                     //System.out.println("between " + i + " and " + j + "  =  " + new CosineSimilarity().cosineSimilarity(tfidfDocsVectorBugs.get(i), tfidfDocsVectorCve.get(j)));
 
                 // use the highest score for each bug report
                 if (cosine > score) {
                     score = cosine;
-                    System.out.println(score);
+                    //System.out.println(score);
                 }
             }
             scores.add(score);
