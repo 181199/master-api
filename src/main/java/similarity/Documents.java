@@ -56,7 +56,7 @@ public class Documents {
     /**
      * Method to create termVector according to its tfidf score.
      */
-    public List<double[]> tfIdfCalculator(List<String[]> docsArray, List<String> allTerms) {
+    public List<double[]> tfIdfCalculator(List<String[]> docsArray, List<String[]> benchmarkDocsArray, List<String> allTerms) {
 
         List<double[]> tfidfDocsVector = new ArrayList<>();
         double tf; //term frequency
@@ -67,8 +67,8 @@ public class Documents {
             int count = 0;
             for (String terms : allTerms) {
                 tf = new TFIDFCalculator().tf(docTermsArray, terms);
-                idf = new TFIDFCalculator().idf(docsArray, terms);
-                if(idf == Double.POSITIVE_INFINITY){
+                idf = new TFIDFCalculator().idf(benchmarkDocsArray, terms);
+                if(Double.isInfinite(idf)){
                     idf = 0.0;
                 }
                 tfidf = tf * idf;
@@ -90,7 +90,7 @@ public class Documents {
             for (String terms : allTerms) {
                 tf = new TFIDFCalculator().tf(s, terms);
                 idf = new TFIDFCalculator().idf(docsArray, terms);
-                if(idf == Double.POSITIVE_INFINITY){
+                if(Double.isInfinite(idf)){
                     idf = 0.0;
                 }
                 tfidf = tf * idf;
@@ -110,7 +110,7 @@ public class Documents {
         for (String terms : allTerms) {
             tf = new TFIDFCalculator().tf(s, terms);
             idf = new TFIDFCalculator().idf(docsArray, terms);
-            if(idf == Double.POSITIVE_INFINITY){
+            if(Double.isInfinite(idf)){
                 idf = 0.0;
             }
             tfidf = tf * idf;
