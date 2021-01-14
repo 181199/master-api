@@ -47,6 +47,12 @@ public class Documents {
         return allTerms;
     }
 
+    public void printTerms(List<String> terms){
+        for(int i = 0; i < terms.size(); i++){
+            System.out.println(terms.get(i));
+        }
+    }
+
     /**
      * Method to create termVector according to its tfidf score.
      */
