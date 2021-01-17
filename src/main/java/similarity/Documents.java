@@ -18,7 +18,7 @@ public class Documents {
 
             String line = "";
             int i = 0;
-            while ((line = br.readLine()) != null && i < 100) {
+            while ((line = br.readLine()) != null && i <= 100) {
                 String[] cols = line.split(";");
                 String cleaned = cleanText(cols[1]);
 
@@ -120,8 +120,8 @@ public class Documents {
         return tfidfvectors;
     }
 
-    public void getCosineSimilarityTwoDocuments(double[] document1, double[] document2){
-        System.out.println("Cosine similarity between doc1 and doc2: " + new CosineSimilarity().cosineSimilarity(document1, document2));
+    public double getCosineSimilarityTwoDocuments(double[] document1, double[] document2){
+        return new CosineSimilarity().cosineSimilarity(document1, document2);
     }
 
     // Method to calculate cosine similarity between all the documents.
@@ -131,17 +131,16 @@ public class Documents {
         double cosine = 0.0;
         for (int i = 0; i < tfidfDocsVector1.size(); i++) {
             for (int j = 0; j < tfidfDocsVector2.size(); j++) {
-                if (i != j)
-                    cosine = new CosineSimilarity().cosineSimilarity(tfidfDocsVector1.get(i), tfidfDocsVector2.get(j));
+                cosine = new CosineSimilarity().cosineSimilarity(tfidfDocsVector1.get(i), tfidfDocsVector2.get(j));
                     //System.out.println("between " + i + " and " + j + "  =  " + new CosineSimilarity().cosineSimilarity(tfidfDocsVectorBugs.get(i), tfidfDocsVectorCve.get(j)));
 
                 // use the highest score for each bug report
                 if (cosine > score) {
                     score = cosine;
-                    //System.out.println(score);
                 }
             }
             scores.add(score);
+            System.out.println(score);
             score = 0.0;
         }
         appendToCsv(scores, "tfidf");
