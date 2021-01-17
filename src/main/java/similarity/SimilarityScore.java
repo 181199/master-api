@@ -1,14 +1,81 @@
 package similarity;
 
 import java.io.*;
+import java.util.ArrayList;
 import java.util.List;
 
 public class SimilarityScore {
 
     public static void main(String args[]) throws FileNotFoundException, IOException, IOException {
         String path = "/Users/anja/Desktop/master/api/files/test/";
-        createDatasetFromScores(path + "stackoverflowSBR_small_tfidf_word2vec.csv",
-                path + "stackoverflowSBR_new.csv", true, true);
+//        createDatasetFromScores(path + "stackoverflowSBR_small_tfidf_word2vec.csv",
+//                path + "stackoverflowSBR_new.csv", true, true);
+
+        String benchmark = path + "cveData.csv";
+        String docs = path + "stackoverflowSBR_small.csv";
+        String features = "/Users/anja/Desktop/master/api/files/FeaturesTFIDF.txt";
+
+        listMostSimilar(benchmark, docs, features);
+    }
+
+    public static void listMostSimilar(String benchmarkDataset, String file, String features) throws IOException {
+        Documents d = new Documents();
+
+        List<String> benchmarkIds = getIds(benchmarkDataset, 0);
+        List<String> bugIds = getIds(file, 2);
+
+        List<String[]> cveDocsArray = d.getDocsArrayFromCsv(benchmarkDataset);
+        List<String> terms = d.getTermsFromFile(features);
+        List<double[]> tfidfDocsVectorCve = d.tfIdfCalculator(cveDocsArray, cveDocsArray, terms);
+        List<String> documents = new ArrayList<>();
+
+        try (BufferedReader br = new BufferedReader(new FileReader(file))) {
+
+            String line = "";
+            int i = 0;
+            while ((line = br.readLine()) != null && i <= 100) {
+                String[] cols = line.split(";");
+                String cleaned = d.cleanText(cols[1]);
+                documents.add(cleaned);
+                i++;
+            }
+
+            double score = 0.0;
+            double cosine = 0.0;
+            int n = 0;
+            for (int k = 0; k < benchmarkIds.size(); k++) {
+                for (int j = 0; j < documents.size(); j++) {
+                    cosine = d.getCosineSimilarityTwoDocuments((d.getDocumentVectors(documents.get(j), terms, cveDocsArray)), tfidfDocsVectorCve.get(k));
+
+                    // use the highest score for each cve record
+                    if (cosine > score) {
+                        score = cosine;
+                        n = j;
+                    }
+                }
+                System.out.println(benchmarkIds.get(k) + " and SO ID " + bugIds.get(n) + ": " + score);
+                score = 0.0;
+            }
+        }
+    }
+
+    public static List<String> getIds(String file, int column) throws IOException {
+        List<String> ids = new ArrayList<>();
+
+        try (BufferedReader br = new BufferedReader(new FileReader(file))) {
+
+            String line = "";
+            int i = 0;
+            while ((line = br.readLine()) != null && i <= 100) {
+                String[] cols = line.split(";");
+                if(i != 0) {
+                    ids.add(cols[column]);
+                }
+                //System.out.println(cols[column]);
+                i++;
+            }
+        }
+        return ids;
     }
 
     public static void createDatasetFromScores(String filePath, String newFilePath, boolean tfidf, boolean word2vec) throws IOException {
