@@ -18,7 +18,7 @@ public class Documents {
 
             String line = "";
             int i = 0;
-            while ((line = br.readLine()) != null && i <= 100) {
+            while ((line = br.readLine()) != null) {
                 String[] cols = line.split(";");
                 String cleaned = cleanText(cols[1]);
 
@@ -66,6 +66,7 @@ public class Documents {
             double[] tfidfvectors = new double[allTerms.size()];
             int count = 0;
             for (String terms : allTerms) {
+                //System.out.println(terms);
                 tf = new TFIDFCalculator().tf(docTermsArray, terms);
                 idf = new TFIDFCalculator().idf(benchmarkDocsArray, terms);
                 if(Double.isInfinite(idf)){
@@ -152,8 +153,8 @@ public class Documents {
         BufferedWriter bw = null;
 
         try {
-            File file = new File("/Users/anja/Desktop/master/api/files/test/stackoverflowSBR_small.csv");
-            File file2 = new File("/Users/anja/Desktop/master/api/files/test/stackoverflowSBR_small_" + columnName + ".csv");//so the
+            File file = new File("/Users/anja/Desktop/master/api/files/testing/stackoverflowSR_small.csv");
+            File file2 = new File("/Users/anja/Desktop/master/api/files/testing/stackoverflowSR_small_" + columnName + ".csv");//so the
             //names don't conflict or just use different folders
 
             br = new BufferedReader(new InputStreamReader(new FileInputStream(file)));

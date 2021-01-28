@@ -15,25 +15,25 @@ public class SimilarityScore {
     private static List<String> documentsToKeep;
 
     public static void main(String args[]) throws FileNotFoundException, IOException, IOException, NoSuchMethodException, IllegalAccessException, InvocationTargetException {
-        String path = "/Users/anja/Desktop/master/api/files/test/";
-//        createDatasetFromScores(path + "stackoverflowSBR_small_tfidf_word2vec.csv",
-//                path + "stackoverflowSBR_new.csv", true, true);
+        String path = "/Users/anja/Desktop/master/api/files/testing/";
+        createDatasetFromScores(path + "stackoverflowNSR_small_tfidf_word2vec.csv",
+                path + "stackoverflowNSR_new.csv", true, true, false);
 
         String benchmark = path + "cveData.csv";
         String docs = path + "stackoverflowSBR_small.csv";
         String features = "/Users/anja/Desktop/master/api/files/FeaturesTFIDF.txt";
         String word2vec = "/Users/anja/Desktop/master/api/files/word2vec_model.txt";
 
-        //listMostSimilar(benchmark, docs, features);
-        listMostSimilarWord2Vec(benchmark, docs, word2vec);
-
-        String newFilePath = path + "stackoverflowSBR_new_word2vec.csv";
-        createDatasetFromCVESimilarity(docs, newFilePath, documentsToKeep);
+        //listMostSimilarTFIDF(benchmark, docs, features);
+//        listMostSimilarWord2Vec(benchmark, docs, word2vec);
+//
+//        String newFilePath = path + "stackoverflowSBR_new_word2vec.csv";
+//        createDatasetFromCVESimilarity(docs, newFilePath, documentsToKeep);
     }
 
 
     // burde endres til å ta inn docsArray for benchmark
-    public static void listMostSimilar(String benchmarkDataset, String file, String features) throws IOException {
+    public static void listMostSimilarTFIDF(String benchmarkDataset, String file, String features) throws IOException {
         Documents d = new Documents();
 
         List<String> benchmarkIds = getIds(benchmarkDataset, 0);
@@ -175,11 +175,18 @@ public class SimilarityScore {
         return ids;
     }
 
-    public static void createDatasetFromScores(String filePath, String newFilePath, boolean tfidf, boolean word2vec) throws IOException {
+    public static void createDatasetFromScores(String filePath, String newFilePath, boolean tfidf, boolean word2vec, boolean security) throws IOException {
         File file = new File(newFilePath);
 
         BufferedReader br = null;
         BufferedWriter bw = null;
+
+        int sec = 0;
+        if(security){
+            sec = 1;
+        }
+
+        double threshold = 0.6;
 
         try {
             br = new BufferedReader(new FileReader(filePath));
@@ -203,20 +210,22 @@ public class SimilarityScore {
                     //System.out.println(average);
                 }
 
-                if(tfidf && !word2vec){
-                    if(tfidfScore >= 0.6){
-                        // add column for security report (1 = security, 0 != security)
-                        bw.write("1;" + cols[0] + ";" + cols[1] + ";" + cols[2] + ";" + cols[3] + "\n");
-                    }
-                } else if(!tfidf && word2vec){
-                    if(word2vecScore >= 0.6){
-                        // add column for security report (1 = security, 0 != security)
-                        bw.write("1;" + cols[0] + ";" + cols[1] + ";" + cols[2] + ";" + cols[3] + "\n");
-                    }
-                } else if(tfidf && word2vec){
-                    if(average >= 0.6){
-                        // add column for security report (1 = security, 0 != security)
-                        bw.write("1;" + cols[0] + ";" + cols[1] + ";" + cols[2] + ";" + cols[3] + "\n");
+                if(i != 0) {
+                    if (tfidf && !word2vec) {
+                        if (tfidfScore <= threshold) {
+                            // add column for security report (1 = security, 0 != security)
+                            bw.write(sec + ";" + cols[0] + ";" + cols[1] + ";" + cols[2] + ";" + cols[3] + "\n");
+                        }
+                    } else if (!tfidf && word2vec) {
+                        if (word2vecScore <= threshold) {
+                            // add column for security report (1 = security, 0 != security)
+                            bw.write(sec + ";" + cols[0] + ";" + cols[1] + ";" + cols[2] + ";" + cols[3] + "\n");
+                        }
+                    } else if (tfidf && word2vec) {
+                        if (average <= threshold) {
+                            // add column for security report (1 = security, 0 != security)
+                            bw.write(sec + ";" + cols[0] + ";" + cols[1] + ";" + cols[2] + ";" + cols[3] + "\n");
+                        }
                     }
                 }
                 i++;

@@ -11,10 +11,8 @@ import org.slf4j.LoggerFactory;
 import java.io.*;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
+import java.text.NumberFormat;
+import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -27,10 +25,10 @@ public class Word2VecCalculator {
         Word2Vec word2vec = getWord2Vec("/Users/anja/Desktop/master/api/files/word2vec_model.txt");
 
         List<Collection<String>> cveSentences = new ArrayList<>();
-        getSentences("/Users/anja/Desktop/master/api/files/test/cveData.csv", cveSentences);
+        getSentences("/Users/anja/Desktop/master/api/files/testing/cveData_small.csv", cveSentences);
 
         List<Collection<String>> bugSentences = new ArrayList<>();
-        getSentences("/Users/anja/Desktop/master/api/files/test/stackoverflowSBR_small.csv", bugSentences);
+        getSentences("/Users/anja/Desktop/master/api/files/testing/stackoverflowSR_small.csv", bugSentences);
 
         getCosineSimilarity(cveSentences, bugSentences, word2vec);
     }
@@ -55,7 +53,7 @@ public class Word2VecCalculator {
                 }
             }
             scores.add(score);
-            System.out.println(score);
+            //System.out.println(score);
             score = 0.0;
         }
         appendToCsv(scores, "word2vec");
@@ -65,7 +63,7 @@ public class Word2VecCalculator {
         try (BufferedReader br = new BufferedReader(new FileReader(file))) {
             String line = "";
             int i = 0;
-            while ((line = br.readLine()) != null && i < 100) {
+            while ((line = br.readLine()) != null && i <= 2500) {
                 String[] cols = line.split(";");
                 String cleaned = cleanText(cols[1]);
 
@@ -84,6 +82,48 @@ public class Word2VecCalculator {
         method.setAccessible(true);
         Word2Vec word2vec = (Word2Vec)method.invoke(null, file);
         return word2vec;
+    }
+
+    public static void writeWord2Vectors(String infile, String outfile, Word2Vec word2vec) {
+
+        try(BufferedWriter bw = new BufferedWriter(new FileWriter(outfile))){
+
+            try(BufferedReader br = new BufferedReader(new FileReader(infile))){
+                String line = "";
+                int index = 0;
+                while((line=br.readLine())!=null) {
+
+                    String[] toks = line.split(";");
+                    Collection<String> tokens = normalizeText(toks[2]);
+                    INDArray invector = getVector(tokens, word2vec);
+
+                    String rowvecpluslabel = getWordVectorsAndLabel(invector, index);
+                    rowvecpluslabel = rowvecpluslabel+toks[0]; 		// append the label at the end
+                    bw.write(rowvecpluslabel+"\n");
+                    index++;
+                }
+
+            }catch(Exception e) {
+                e.printStackTrace();
+            }
+
+        }catch(Exception e) {
+            //
+        }
+    }
+
+    private static String getWordVectorsAndLabel(INDArray vec, int index) {
+
+        String rowvecs = "";
+        for(int i=0; i<vec.columns()-1; i++) {
+            NumberFormat nf = NumberFormat.getInstance(new Locale("en", "US"));
+            nf.setMaximumFractionDigits(6);
+            String val = nf.format(vec.getRow(0).getDouble(i));
+            rowvecs += val+";";
+        }
+
+        return rowvecs;
+
     }
 
     public static Collection<String> normalizeText(String text){
@@ -175,8 +215,8 @@ public class Word2VecCalculator {
         BufferedWriter bw=null;
 
         try {
-            File file = new File("/Users/anja/Desktop/master/api/files/test/stackoverflowSBR_small_tfidf.csv");
-            File file2 = new File("/Users/anja/Desktop/master/api/files/test/stackoverflowSBR_small_tfidf_" + columnName + ".csv");//so the
+            File file = new File("/Users/anja/Desktop/master/api/files/testing/stackoverflowSR_small_tfidf.csv");
+            File file2 = new File("/Users/anja/Desktop/master/api/files/testing/stackoverflowSR_small_tfidf_" + columnName + ".csv");//so the
             //names don't conflict or just use different folders
 
             br = new BufferedReader(new InputStreamReader(new FileInputStream(file))) ;
