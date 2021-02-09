@@ -81,6 +81,31 @@ public class Documents {
         return tfidfDocsVector;
     }
 
+    public List<double[]> ntfIdfCalculator(List<String[]> docsArray, List<String[]> benchmarkDocsArray, List<String> allTerms) {
+
+        List<double[]> ntfidfDocsVector = new ArrayList<>();
+        double ntf; //term frequency
+        double idf; //inverse document frequency
+        double ntfidf; //term frequency inverse document frequency
+        for (String[] docTermsArray : docsArray) {
+            double[] tfidfvectors = new double[allTerms.size()];
+            int count = 0;
+            for (String terms : allTerms) {
+                //System.out.println(terms);
+                ntf = new TFIDFCalculator().ntf(docTermsArray, terms);
+                idf = new TFIDFCalculator().idf(benchmarkDocsArray, terms);
+                if(Double.isInfinite(idf)){
+                    idf = 0.0;
+                }
+                ntfidf = ntf * idf;
+                tfidfvectors[count] = ntfidf;
+                count++;
+            }
+            ntfidfDocsVector.add(tfidfvectors);  //storing document vectors;
+        }
+        return ntfidfDocsVector;
+    }
+
     public void printDocumentVectors(String document, List<String> allTerms, List<String[]> docsArray){
         double tf; //term frequency
         double idf; //inverse document frequency

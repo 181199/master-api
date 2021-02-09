@@ -14,6 +14,33 @@ public class TFIDFCalculator {
         return result / doc.length;
     }
 
+    public static double booleantf(String[] doc, String term) {
+        for (String word : doc) {
+            if (term.equalsIgnoreCase(word))
+                return 1;
+        }
+        return 0;
+    }
+
+    public static double ntf(String[] doc, String term) {
+        return (0.5 + ((0.5*tf(doc, term))/maxtf(doc, term)));
+    }
+
+    public static double maxtf(String[] doc, String term){
+        double max = 0;
+        double result = 0;
+        for (String word : doc) {
+            if (term.equalsIgnoreCase(word)) {
+                result++;
+            }
+
+            if(result > max){
+                max = result;
+            }
+        }
+        return max / doc.length;
+    }
+
     /**
      * @param docs list of list of strings represents the dataset
      * @param term String represents a term
@@ -42,20 +69,8 @@ public class TFIDFCalculator {
         return tf(doc, term) * idf(docs, term);
     }
 
-    public void tfidfCalculator(List<String> docs){
-
+    public double ntfIdf(String[] doc, List<String[]> docs, String term) {
+        return ntf(doc, term) * idf(docs, term);
     }
 
-
-    public static void main(String[] args) {
-
-        List<String> doc1 = Arrays.asList("Lorem", "ipsum", "dolor", "ipsum", "sit", "ipsum");
-        List<String> doc2 = Arrays.asList("Vituperata", "incorrupte", "at", "ipsum", "pro", "quo");
-        List<String> doc3 = Arrays.asList("Has", "persius", "disputationi", "id", "simul");
-        List<List<String>> documents = Arrays.asList(doc1, doc2, doc3);
-
-        TFIDFCalculator calculator = new TFIDFCalculator();
-        //double tfidf = calculator.tfIdf(doc1, documents, "ipsum");
-        //System.out.println("TF-IDF (ipsum) = " + tfidf);
-    }
 }
