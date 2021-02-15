@@ -24,13 +24,15 @@ public class Word2VecCalculator {
 
         Word2Vec word2vec = getWord2Vec("/Users/anja/Desktop/master/api/files/word2vec_model.txt");
 
-        List<Collection<String>> cveSentences = new ArrayList<>();
-        getSentences("/Users/anja/Desktop/master/api/files/testing/cveData_small.csv", cveSentences);
+//        List<Collection<String>> cveSentences = new ArrayList<>();
+//        getSentences("/Users/anja/Desktop/master/api/files/testing/cveData_small.csv", cveSentences);
+//
+//        List<Collection<String>> bugSentences = new ArrayList<>();
+//        getSentences("/Users/anja/Desktop/master/api/files/testing/stackoverflowSR_small.csv", bugSentences);
+//
+//        getCosineSimilarity(cveSentences, bugSentences, word2vec);
 
-        List<Collection<String>> bugSentences = new ArrayList<>();
-        getSentences("/Users/anja/Desktop/master/api/files/testing/stackoverflowSR_small.csv", bugSentences);
-
-        getCosineSimilarity(cveSentences, bugSentences, word2vec);
+        writeWord2Vectors("/Users/anja/Desktop/master/api/dataset/odcv.csv", "/Users/anja/Desktop/master/api/dataset/odcv_word2vec.csv", word2vec);
     }
 
     public static void getCosineSimilarity(List<Collection<String>> cve, List<Collection<String>> bugs, Word2Vec word2vec) throws IOException {
@@ -63,7 +65,7 @@ public class Word2VecCalculator {
         try (BufferedReader br = new BufferedReader(new FileReader(file))) {
             String line = "";
             int i = 0;
-            while ((line = br.readLine()) != null && i <= 2500) {
+            while ((line = br.readLine()) != null && i <= 100) {
                 String[] cols = line.split(";");
                 String cleaned = cleanText(cols[1]);
 
@@ -94,7 +96,7 @@ public class Word2VecCalculator {
                 while((line=br.readLine())!=null) {
 
                     String[] toks = line.split(";");
-                    Collection<String> tokens = normalizeText(toks[2]);
+                    Collection<String> tokens = normalizeText(toks[1] + " " + toks[2]);
                     INDArray invector = getVector(tokens, word2vec);
 
                     String rowvecpluslabel = getWordVectorsAndLabel(invector, index);

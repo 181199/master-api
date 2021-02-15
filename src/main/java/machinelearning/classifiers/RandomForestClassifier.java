@@ -10,13 +10,30 @@ public class RandomForestClassifier {
     public RandomForestClassifier() {
     }
 
+    public static void classifyModel(Instances train, Instances test, String model) throws Exception{
+        // Random forest classifier
+        RandomForest classifier = (RandomForest) weka.core.SerializationHelper.read(model);
+
+        classifier.buildClassifier(train);
+
+        // create new Evaluation object and pass the schema of the dataset
+        Evaluation eval = new Evaluation(train);
+
+        // evaluate classifier on test-set
+        eval.evaluateModel(classifier, test);
+
+        System.out.println("Random forest:");
+        // print some stats about the result:
+        System.out.println(eval.toSummaryString());
+        // more details:
+        System.out.println(eval.toClassDetailsString());
+        // print confusion matrix
+        System.out.println(eval.toMatrixString());
+    }
+
     public static void classify(Instances train, Instances test, String dataset) throws Exception{
         // Random forest classifier
-        RandomForest rf = new RandomForest();
-
-        // set up FilteredClassifier
-        FilteredClassifier classifier = new FilteredClassifier();
-        classifier.setClassifier(rf);
+        RandomForest classifier = new RandomForest();
 
         classifier.buildClassifier(train);
 

@@ -13,6 +13,7 @@ import org.deeplearning4j.nn.conf.layers.DenseLayer;
 import org.deeplearning4j.nn.conf.layers.OutputLayer;
 import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
 import org.deeplearning4j.nn.weights.WeightInit;
+import org.deeplearning4j.util.ModelSerializer;
 import org.nd4j.evaluation.classification.Evaluation;
 import org.nd4j.linalg.activations.Activation;
 import org.nd4j.linalg.api.ndarray.INDArray;
@@ -46,9 +47,48 @@ public class CNNClassifier {
 
     public static void main(String[] args) throws IOException, InterruptedException {
 
+        String filePath = "/Users/anja/Desktop/master/api/dataset/derby_word2vec.csv";
+        String saveModel = "./files/models/SO_cnn.model";
+
+        //createModel(filePath, saveModel);
+
+        classify(filePath);
+    }
+
+    public static void classify(String filePath) throws IOException, InterruptedException {
         DataSet allData;
         try (RecordReader recordReader = new CSVRecordReader(1, ';')) {
-            recordReader.initialize(new FileSplit(new File("files/testing/stackoverflow_word2vec.csv")));
+            recordReader.initialize(new FileSplit(new File(filePath)));
+
+            DataSetIterator iterator = new RecordReaderDataSetIterator(recordReader, 1000, INDEX_LABEL, CLASSES_COUNT);
+            allData = iterator.next();
+        }
+
+        allData.shuffle(42);
+
+        DataNormalization normalizer = new NormalizerStandardize();
+        normalizer.fit(allData);
+        normalizer.transform(allData);
+
+        SplitTestAndTrain testAndTrain = allData.splitTestAndTrain(0.80);
+        DataSet trainingData = testAndTrain.getTrain();
+        DataSet testData = testAndTrain.getTest();
+
+        MultiLayerNetwork model = ModelSerializer.restoreMultiLayerNetwork("/Users/anja/Desktop/master/api/files/models/SO_cnn.model");
+        model.init();
+        model.fit(trainingData);
+
+        INDArray output = model.output(testData.getFeatures());
+
+        Evaluation eval = new Evaluation(CLASSES_COUNT);
+        eval.eval(testData.getLabels(), output);
+        System.out.println(eval.stats());
+    }
+
+    public static void createModel(String filepath, String saveModel) throws IOException, InterruptedException {
+        DataSet allData;
+        try (RecordReader recordReader = new CSVRecordReader(1, ';')) {
+            recordReader.initialize(new FileSplit(new File(filepath)));
 
             DataSetIterator iterator = new RecordReaderDataSetIterator(recordReader, 1000, INDEX_LABEL, CLASSES_COUNT);
             allData = iterator.next();
@@ -94,5 +134,7 @@ public class CNNClassifier {
         Evaluation eval = new Evaluation(CLASSES_COUNT);
         eval.eval(testData.getLabels(), output);
         System.out.println(eval.stats());
+
+        ModelSerializer.writeModel(model, saveModel, true);
     }
 }
