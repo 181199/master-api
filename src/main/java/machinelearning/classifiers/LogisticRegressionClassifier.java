@@ -14,15 +14,13 @@ public class LogisticRegressionClassifier {
     public LogisticRegressionClassifier(){
     }
 
-    public static void classifyModel(Instances train, Instances test, String model) throws Exception {
+    public static void classifyModel(Instances test, String model) throws Exception {
         // Naive bayes classifier
 
         Logistic classifier = (Logistic) weka.core.SerializationHelper.read(model);
 
-        classifier.buildClassifier(train);
-
         // create new Evaluation object and pass the schema of the dataset
-        Evaluation eval = new Evaluation(train);
+        Evaluation eval = new Evaluation(test);
 
         // evaluate classifier on test-set
         eval.evaluateModel(classifier, test);

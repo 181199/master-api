@@ -47,7 +47,7 @@ public class CNNClassifier {
 
     public static void main(String[] args) throws IOException, InterruptedException {
 
-        String filePath = "/Users/anja/Desktop/master/api/dataset/derby_word2vec.csv";
+        String filePath = "/Users/anja/Desktop/master/api/dataset/camel_word2vec.csv";
         String saveModel = "./files/models/SO_cnn.model";
 
         //createModel(filePath, saveModel);
@@ -60,7 +60,7 @@ public class CNNClassifier {
         try (RecordReader recordReader = new CSVRecordReader(1, ';')) {
             recordReader.initialize(new FileSplit(new File(filePath)));
 
-            DataSetIterator iterator = new RecordReaderDataSetIterator(recordReader, 1000, INDEX_LABEL, CLASSES_COUNT);
+            DataSetIterator iterator = new RecordReaderDataSetIterator(recordReader, 5000, INDEX_LABEL, CLASSES_COUNT);
             allData = iterator.next();
         }
 
@@ -70,18 +70,12 @@ public class CNNClassifier {
         normalizer.fit(allData);
         normalizer.transform(allData);
 
-        SplitTestAndTrain testAndTrain = allData.splitTestAndTrain(0.80);
-        DataSet trainingData = testAndTrain.getTrain();
-        DataSet testData = testAndTrain.getTest();
-
         MultiLayerNetwork model = ModelSerializer.restoreMultiLayerNetwork("/Users/anja/Desktop/master/api/files/models/SO_cnn.model");
-        model.init();
-        model.fit(trainingData);
 
-        INDArray output = model.output(testData.getFeatures());
+        INDArray output = model.output(allData.getFeatures());
 
         Evaluation eval = new Evaluation(CLASSES_COUNT);
-        eval.eval(testData.getLabels(), output);
+        eval.eval(allData.getLabels(), output);
         System.out.println(eval.stats());
     }
 

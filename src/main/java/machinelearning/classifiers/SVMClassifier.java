@@ -12,19 +12,12 @@ public class SVMClassifier {
     public SVMClassifier() {
     }
 
-    public static void classifyModel(Instances train, Instances test, String model) throws Exception {
+    public static void classifyModel(Instances test, String model) throws Exception {
         // configure SVM
         LibSVM classifier = (LibSVM) weka.core.SerializationHelper.read(model);
-        classifier.setKernelType(new SelectedTag(LibSVM.KERNELTYPE_RBF,LibSVM.TAGS_KERNELTYPE)); // type: RBF
-        classifier.setCost(100.0);		// the C parameter
-        classifier.setProbabilityEstimates(false);
-        classifier.setDoNotReplaceMissingValues(true);
-
-
-        classifier.buildClassifier(train);
 
         // create new Evaluation object and pass the schema of the dataset
-        Evaluation eval = new Evaluation(train);
+        Evaluation eval = new Evaluation(test);
 
         // evaluate classifier on test-set
         eval.evaluateModel(classifier, test);

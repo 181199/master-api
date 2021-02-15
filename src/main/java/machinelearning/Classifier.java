@@ -4,6 +4,8 @@ import machinelearning.classifiers.*;
 import machinelearning.utils.MyStopwordsHandler;
 import org.opencv.ml.LogisticRegression;
 import weka.classifiers.Evaluation;
+import weka.classifiers.bayes.NaiveBayes;
+import weka.classifiers.functions.LibSVM;
 import weka.classifiers.meta.FilteredClassifier;
 import weka.classifiers.trees.RandomForest;
 import weka.classifiers.trees.RandomTree;
@@ -31,12 +33,14 @@ public class Classifier {
 
         //createModel(path1 + "stackoverflow.arff", features, "SO");
 
-        classify(path2 + "derby.arff", features);
+        String test = path2 + "camel.arff";
+
+        classify(test, features);
     }
 
-    public static void classify(String filepath, String features) throws Exception {
+    public static void classify(String test, String features) throws Exception {
 
-        Instances data = loadDataset(filepath);
+        Instances testing = loadDataset(test);
 
         NGramTokenizer tokenizer = new NGramTokenizer();    // get a tokenizer
         SnowballStemmer stemmer = new SnowballStemmer();    // get a word-stemmer
@@ -45,7 +49,7 @@ public class Classifier {
         FixedDictionaryStringToWordVector filter = new FixedDictionaryStringToWordVector();
 
         filter.setDictionaryFile(new File(features));
-        filter.setInputFormat(data);
+        filter.setInputFormat(testing);
         filter.setTokenizer(tokenizer);
         filter.setLowerCaseTokens(true);
         filter.setIDFTransform(false);
@@ -54,27 +58,17 @@ public class Classifier {
         //filter.setStemmer(stemmer);
         filter.setStopwordsHandler(stopword);
 
-        Instances dataFiltered = Filter.useFilter(data, filter);
+        Instances testSet = Filter.useFilter(testing, filter);
 
-        Instances sample = dataFiltered;
-        int numFolds = 5;
+        RandomForestClassifier.classifyModel(testSet, "/Users/anja/Desktop/master/api/files/models/SO_randomforest.model");
 
-        // setting up train- and test-set
-        sample.randomize(new Debug.Random(42));
-        sample.stratify(numFolds);
+        NaiveBayesClassifier.classifyModel(testSet, "/Users/anja/Desktop/master/api/files/models/SO_naivebayes.model");
 
-        Instances trainingSet = sample.trainCV(numFolds, 0);
-        Instances testSet = sample.testCV(numFolds, 0);
+        SVMClassifier.classifyModel(testSet, "/Users/anja/Desktop/master/api/files/models/SO_svm.model");
 
-        RandomForestClassifier.classifyModel(trainingSet, testSet, "/Users/anja/Desktop/master/api/files/models/SO_randomforest.model");
+        KNNClassifier.classifyModel(testSet, "/Users/anja/Desktop/master/api/files/models/SO_ibk.model");
 
-        NaiveBayesClassifier.classifyModel(trainingSet, testSet, "/Users/anja/Desktop/master/api/files/models/SO_naivebayes.model");
-
-        SVMClassifier.classifyModel(trainingSet, testSet, "/Users/anja/Desktop/master/api/files/models/SO_svm.model");
-
-        KNNClassifier.classifyModel(trainingSet, testSet, "/Users/anja/Desktop/master/api/files/models/SO_ibk.model");
-
-        LogisticRegressionClassifier.classifyModel(trainingSet, testSet, "/Users/anja/Desktop/master/api/files/models/SO_lr.model");
+        LogisticRegressionClassifier.classifyModel(testSet, "/Users/anja/Desktop/master/api/files/models/SO_lr.model");
     }
 
     public static void createModel(String filePath, String features, String datasetName) throws Exception {
