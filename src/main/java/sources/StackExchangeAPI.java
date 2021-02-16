@@ -9,21 +9,23 @@ import org.apache.http.util.EntityUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
+import similarity.Documents;
 
 import java.io.*;
 import java.net.URLEncoder;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.List;
 
 public class StackExchangeAPI {
 
     private static StringBuilder builder;
 
-    public static void main(String[] args) throws UnsupportedEncodingException {
+    public static void main(String[] args) throws IOException {
 
         PrintWriter pw = null;
         try {
-            pw = new PrintWriter(new File("./files/stackoverflowSBR_small.csv"));
+            pw = new PrintWriter(new File("./files/stackoverflowSR_threshold.csv"));
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         }
@@ -34,14 +36,20 @@ public class StackExchangeAPI {
         String tags = "security";
         String site = "stackoverflow";
         int page = 1;
+        String dataset = "/Users/anja/Desktop/master/api/files/testing/cveData_small.csv";
+        String terms = "/Users/anja/Desktop/master/api/files/FeaturesTFIDF.txt";
 
-        while(page <= 5) {
-            getSBRs(site, tags, page);
-            page++;
-        }
+        //getNSRsWithThreshold(dataset, terms,  site, 0.05, 500);
+        getSRsWithThreshold(dataset, terms, site, tags, 0.8, 500);
 
-//        while(page <= 2){
-//            getNSBRs(site, page);
+//        //each page has max 100 posts
+//        while(page <= 25) {
+//            getSRs(site, tags, page);
+//            page++;
+//        }
+//
+//        while(page <= 25){
+//            getNSRs(site, page);
 //            page++;
 //        }
 
@@ -50,7 +58,7 @@ public class StackExchangeAPI {
         System.out.println("done!");
     }
 
-    public static void getSBRs(String site, String tags, int page) throws UnsupportedEncodingException {
+    public static void getSRs(String site, String tags, int page) throws UnsupportedEncodingException {
         HttpClient client = HttpClientBuilder.create().build();
         HttpGet request = new HttpGet("https://api.stackexchange.com/2.2/questions?page=" + page + "&pagesize=100&order=desc&sort=activity&tagged=" + URLEncoder.encode(tags, "UTF-8") + "&site=" + site + "&filter=!--1nZwT3Ejsm");
 
@@ -105,7 +113,7 @@ public class StackExchangeAPI {
         }
     }
 
-    public static void getNSBRs(String site, int page) throws UnsupportedEncodingException {
+    public static void getNSRs(String site, int page) throws UnsupportedEncodingException {
         HttpClient client = HttpClientBuilder.create().build();
         HttpGet request = new HttpGet("https://api.stackexchange.com/2.2/questions?page=" + page + "&pagesize=100&order=desc&sort=activity&&site=" + site + "&filter=!--1nZwT3Ejsm");
 
@@ -170,6 +178,176 @@ public class StackExchangeAPI {
             }
         } catch (IOException e) {
             e.printStackTrace();
+        }
+    }
+
+    public static void getNSRsWithThreshold(String dataset, String terms, String site, double threshold, int nrNSRs) throws IOException {
+
+        Documents d = new Documents();
+
+        List<String> features = d.getTermsFromFile(terms);
+
+        List<String[]> cveDocsArray = d.getDocsArrayFromCsv(dataset);
+        System.out.println("done docs");
+        List<double[]> tfidfDocsVectorCve = d.tfIdfCalculator(cveDocsArray, cveDocsArray, features);
+        System.out.println("done tfidf");
+
+        int page = 1;
+        int NSRs = 0;
+        while(NSRs <= nrNSRs) {
+            HttpClient client = HttpClientBuilder.create().build();
+            HttpGet request = new HttpGet("https://api.stackexchange.com/2.2/questions?page=" + page + "&pagesize=100&order=desc&sort=activity&&site=" + site + "&filter=!--1nZwT3Ejsm");
+
+            try {
+                HttpResponse response = client.execute(request);
+                HttpEntity entity = response.getEntity();
+
+                // Read the contents of an entity and return it as a String.
+                String content = EntityUtils.toString(entity);
+                System.out.println(content);
+
+                JSONObject result = new JSONObject(content);
+
+                boolean security = false;
+
+                JSONArray tokenList = result.getJSONArray("items");
+                for (int i = 0; i < tokenList.length(); i++) {
+                    JSONObject oj = tokenList.getJSONObject(i);
+                    String title = oj.getString("title");
+                    title = title.replace(";", "");
+
+                    JSONArray tags = oj.getJSONArray("tags");
+                    for (int j = 0; j < tags.length(); j++) {
+                        if (tags.get(j).toString().equals("security")) {
+                            security = true;
+                        }
+                    }
+
+                    int id = oj.getInt("question_id");
+                    int date = oj.getInt("creation_date");
+                    Date time = new Date((long) date * 1000);
+
+                    String newTime = new SimpleDateFormat("dd-MM-yyyy").format(time);
+
+                    String body = oj.getString("body");
+                    String cleanText = html2text(body);
+                    cleanText = cleanText.replace("\n", "").replace("\r", "").replace(";", "");
+
+                    // check cosine similarity
+                    double[] cleanTextDoc = d.getDocumentVectors(cleanText, features, cveDocsArray);
+
+                    double score = 0.0;
+                    double cosine = 0.0;
+                    for (int k = 0; k < tfidfDocsVectorCve.size(); k++) {
+                        cosine = d.getCosineSimilarityTwoDocuments(cleanTextDoc, tfidfDocsVectorCve.get(k));
+
+                        if (cosine > score) {
+                            score = cosine;
+                        }
+                    }
+
+                    if (score <= threshold && !security) {
+                        builder.append(title + ";");
+                        builder.append(cleanText + ";");
+                        builder.append(id + ";");
+                        builder.append(newTime + ";");
+                        builder.append('\n');
+
+                        System.out.println("added");
+
+                        NSRs++;
+
+                        if(NSRs == 500){
+                            continue;
+                        }
+                    }
+
+                    security = false;
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            page++;
+        }
+    }
+
+    public static void getSRsWithThreshold(String dataset, String terms, String site, String tags, double threshold, int nrSRs) throws IOException {
+
+        Documents d = new Documents();
+
+        List<String> features = d.getTermsFromFile(terms);
+
+        List<String[]> cveDocsArray = d.getDocsArrayFromCsv(dataset);
+        System.out.println("done docs");
+        List<double[]> tfidfDocsVectorCve = d.tfIdfCalculator(cveDocsArray, cveDocsArray, features);
+        System.out.println("done tfidf");
+
+        int page = 1;
+        int SRs = 0;
+        while(SRs <= nrSRs) {
+            HttpClient client = HttpClientBuilder.create().build();
+            HttpGet request = new HttpGet("https://api.stackexchange.com/2.2/questions?page=" + page + "&pagesize=100&order=desc&sort=activity&tagged=" + URLEncoder.encode(tags, "UTF-8") + "&site=" + site + "&filter=!--1nZwT3Ejsm");
+
+            try {
+                HttpResponse response = client.execute(request);
+                HttpEntity entity = response.getEntity();
+
+                // Read the contents of an entity and return it as a String.
+                String content = EntityUtils.toString(entity);
+                System.out.println(content);
+
+                JSONObject result = new JSONObject(content);
+
+                JSONArray tokenList = result.getJSONArray("items");
+                for (int i = 0; i < tokenList.length(); i++) {
+                    JSONObject oj = tokenList.getJSONObject(i);
+                    String title = oj.getString("title");
+                    title = title.replace(";", "");
+
+                    int id = oj.getInt("question_id");
+                    int date = oj.getInt("creation_date");
+                    Date time = new Date((long) date * 1000);
+
+                    String newTime = new SimpleDateFormat("dd-MM-yyyy").format(time);
+
+                    String body = oj.getString("body");
+                    String cleanText = html2text(body);
+                    cleanText = cleanText.replace("\n", "").replace("\r", "").replace(";", "");
+
+                    // check cosine similarity
+                    double[] cleanTextDoc = d.getDocumentVectors(cleanText, features, cveDocsArray);
+
+                    double score = 0.0;
+                    double cosine = 0.0;
+                    for (int k = 0; k < tfidfDocsVectorCve.size(); k++) {
+                        cosine = d.getCosineSimilarityTwoDocuments(cleanTextDoc, tfidfDocsVectorCve.get(k));
+
+                        if (cosine > score) {
+                            score = cosine;
+                        }
+                    }
+
+                    if (score >= threshold) {
+                        System.out.println(score);
+
+                        builder.append(title + ";");
+                        builder.append(cleanText + ";");
+                        builder.append(id + ";");
+                        builder.append(newTime + ";");
+                        builder.append('\n');
+
+                        System.out.println("added");
+
+                        SRs++;
+
+                        if(SRs == 500){
+                            continue;
+                        }
+                    }
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
 
