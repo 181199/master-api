@@ -50,12 +50,12 @@ public class CNNClassifier {
         String filePath = "/Users/anja/Desktop/master/api/dataset/camel_word2vec.csv";
         String saveModel = "./files/models/SO_cnn.model";
 
-        //createModel(filePath, saveModel);
+        //createCNNModel(filePath, saveModel);
 
-        classify(filePath);
+        classifyCNN(filePath);
     }
 
-    public static void classify(String filePath) throws IOException, InterruptedException {
+    public static void classifyCNN(String filePath) throws IOException, InterruptedException {
         DataSet allData;
         try (RecordReader recordReader = new CSVRecordReader(1, ';')) {
             recordReader.initialize(new FileSplit(new File(filePath)));
@@ -76,10 +76,21 @@ public class CNNClassifier {
 
         Evaluation eval = new Evaluation(CLASSES_COUNT);
         eval.eval(allData.getLabels(), output);
-        System.out.println(eval.stats());
+
+        double recall = eval.recall(1);
+        double precision = eval.precision(1);
+        double fmeasure = eval.f1(1);
+        double gmeasure = (2 * eval.recall(1)*100*(100 - eval.falsePositiveRate(1)*100))/(eval.recall(1)*100 + (100 - eval.falsePositiveRate(1)*100));
+
+        System.out.println("TP: " + eval.truePositives().get(1) + " | TN: " + eval.trueNegatives().get(1) + " | FP: " + eval.falsePositives().get(1) + " | FN: " + eval.falseNegatives().get(1));
+
+        System.out.println("Precision: " + precision);
+        System.out.println("Recall: " + recall);
+        System.out.println("F-measure: " + fmeasure);
+        System.out.println("G-measure: " + gmeasure + "\n");
     }
 
-    public static void createModel(String filepath, String saveModel) throws IOException, InterruptedException {
+    public static void createCNNModel(String filepath, String saveModel) throws IOException, InterruptedException {
         DataSet allData;
         try (RecordReader recordReader = new CSVRecordReader(1, ';')) {
             recordReader.initialize(new FileSplit(new File(filepath)));
@@ -127,7 +138,18 @@ public class CNNClassifier {
 
         Evaluation eval = new Evaluation(CLASSES_COUNT);
         eval.eval(testData.getLabels(), output);
-        System.out.println(eval.stats());
+
+        double recall = eval.recall(1);
+        double precision = eval.precision(1);
+        double fmeasure = eval.f1(1);
+        double gmeasure = (2 * eval.recall(1)*100*(100 - eval.falsePositiveRate(1)*100))/(eval.recall(1)*100 + (100 - eval.falsePositiveRate(1)*100));
+
+        System.out.println("TP: " + eval.truePositives().get(1) + " | TN: " + eval.trueNegatives().get(1) + " | FP: " + eval.falsePositives().get(1) + " | FN: " + eval.falseNegatives().get(1));
+
+        System.out.println("Precision: " + precision);
+        System.out.println("Recall: " + recall);
+        System.out.println("F-measure: " + fmeasure);
+        System.out.println("G-measure: " + gmeasure + "\n");
 
         ModelSerializer.writeModel(model, saveModel, true);
     }

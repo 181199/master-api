@@ -23,13 +23,19 @@ public class KNNClassifier {
         // evaluate classifier on test-set
         eval.evaluateModel(classifier, test);
 
-        System.out.println("Ibk:");
-        // print some stats about the result:
-        System.out.println(eval.toSummaryString());
-        // more details:
-        System.out.println(eval.toClassDetailsString());
-        // print confusion matrix
-        System.out.println(eval.toMatrixString());
+        double recall = eval.recall(1);
+        double precision = eval.precision(1);
+        double fmeasure = eval.fMeasure(1);
+        double gmeasure = (2 * eval.recall(1)*100*(100 - eval.falsePositiveRate(1)*100))/(eval.recall(1)*100 + (100 - eval.falsePositiveRate(1)*100));
+
+        System.out.println("IBk:");
+
+        System.out.println("TP: " + eval.numTruePositives(1) + " | TN: " + eval.numTrueNegatives(1) + " | FP: " + eval.numFalsePositives(1) + " | FN: " + eval.numFalseNegatives(1));
+
+        System.out.println("Precision: " + precision);
+        System.out.println("Recall: " + recall);
+        System.out.println("F-measure: " + fmeasure);
+        System.out.println("G-measure: " + gmeasure + "\n");
     }
 
     public static void classify(Instances train, Instances test, String dataset) throws Exception {
@@ -47,13 +53,19 @@ public class KNNClassifier {
         // evaluate classifier on test-set
         eval.evaluateModel(classifier, test);
 
-        System.out.println("Ibk:");
-        // print some stats about the result:
-        System.out.println(eval.toSummaryString());
-        // more details:
-        System.out.println(eval.toClassDetailsString());
-        // print confusion matrix
-        System.out.println(eval.toMatrixString());
+        double recall = eval.recall(1);
+        double precision = eval.precision(1);
+        double fmeasure = eval.fMeasure(1);
+        double gmeasure = (2 * eval.recall(1)*100*(100 - eval.falsePositiveRate(1)*100))/(eval.recall(1)*100 + (100 - eval.falsePositiveRate(1)*100));
+
+        System.out.println("IBk:");
+
+        System.out.println("TP: " + eval.numTruePositives(1) + " | TN: " + eval.numTrueNegatives(1) + " | FP: " + eval.numFalsePositives(1) + " | FN: " + eval.numFalseNegatives(1));
+
+        System.out.println("Precision: " + precision);
+        System.out.println("Recall: " + recall);
+        System.out.println("F-measure: " + fmeasure);
+        System.out.println("G-measure: " + gmeasure + "\n");
 
         weka.core.SerializationHelper.write("./files/models/" + dataset + "_ibk.model", classifier);
     }
