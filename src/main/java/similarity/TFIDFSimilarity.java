@@ -88,7 +88,7 @@ public class Documents {
         double idf; //inverse document frequency
         double ntfidf; //term frequency inverse document frequency
         for (String[] docTermsArray : docsArray) {
-            double[] tfidfvectors = new double[allTerms.size()];
+            double[] ntfidfvectors = new double[allTerms.size()];
             int count = 0;
             for (String terms : allTerms) {
                 //System.out.println(terms);
@@ -98,10 +98,10 @@ public class Documents {
                     idf = 0.0;
                 }
                 ntfidf = ntf * idf;
-                tfidfvectors[count] = ntfidf;
+                ntfidfvectors[count] = ntfidf;
                 count++;
             }
-            ntfidfDocsVector.add(tfidfvectors);  //storing document vectors;
+            ntfidfDocsVector.add(ntfidfvectors);  //storing document vectors;
         }
         return ntfidfDocsVector;
     }

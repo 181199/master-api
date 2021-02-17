@@ -16,7 +16,7 @@ public class CVECrawler {
 
     public static void main(String[] args) {
 
-        String newFile = "/Users/anja/Desktop/master/api/files/cveTest.csv";
+        String newFile = "/Users/anja/Desktop/master/api/files/cve.csv";
         queryCVE(newFile, 2020, 2500);
     }
 
@@ -35,6 +35,7 @@ public class CVECrawler {
         WebClient client = new WebClient();
         client.getOptions().setCssEnabled(false);
         client.getOptions().setJavaScriptEnabled(false);
+        client.getOptions().setThrowExceptionOnFailingStatusCode(false);
 
         int number = 1;
         final DecimalFormat decimalFormat = new DecimalFormat("0000");

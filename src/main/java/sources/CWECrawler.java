@@ -17,11 +17,11 @@ public class CWECrawler {
 
     public static void main(String[] args) {
 
-        String newFile = "/Users/anja/Desktop/master/api/files/cweTest.csv";
-        queryCVE(newFile, 100);
+        String newFile = "/Users/anja/Desktop/master/api/files/cwe.csv";
+        queryCWE(newFile, 1500);
     }
 
-    public static void queryCVE(String newFile, int numQueries){
+    public static void queryCWE(String newFile, int numQueries){
         PrintWriter pw = null;
         try {
             pw = new PrintWriter(new File(newFile));
@@ -35,6 +35,7 @@ public class CWECrawler {
         WebClient client = new WebClient();
         client.getOptions().setCssEnabled(false);
         client.getOptions().setJavaScriptEnabled(false);
+        client.getOptions().setThrowExceptionOnFailingStatusCode(false);
 
         int number = 1;
         while (number <= numQueries) {
@@ -43,8 +44,12 @@ public class CWECrawler {
                 HtmlPage page = client.getPage(searchUrl);
 
                 ArrayList<HtmlHeading2> titleList = (ArrayList<HtmlHeading2>) page.getByXPath("//*[@id=\"Contentpane\"]/div[2]/h2");
+                if(titleList.isEmpty()){
+                    number++;
+                    continue;
+                }
                 final HtmlHeading2 weakness = titleList.get(0);
-                if(weakness.asText().contains("CATEGORY") || weakness.asText().contains("DEPRECATED")){
+                if(weakness.asText().contains("CATEGORY") || weakness.asText().contains("DEPRECATED") || weakness.asText().contains("deprecated") || weakness.asText().contains("Deprecated") || weakness.asText().contains("Weaknesses")){
                     number++;
                     continue;
                 }
@@ -64,17 +69,21 @@ public class CWECrawler {
 
                 String xpathDesc = "//*[@id=\"oc_" + number + "_Description\"]/div/div/text()";
                 ArrayList<DomText> list = (ArrayList<DomText>) page.getByXPath(xpathDesc);
+                if(list.isEmpty()){
+                    number++;
+                    continue;
+                }
                 final DomText desc = list.get(0);
                 System.out.println("   Description: " + desc.asText());
 
-                String notes = "";
-                String xpathNotes = "//*[@id=\"oc_" + number + "_Notes\"]/div/div/div";
-                ArrayList<HtmlDivision> notesList = (ArrayList<HtmlDivision>) page.getByXPath(xpathNotes);
-                if(!notesList.isEmpty()) {
-                    final HtmlDivision note = notesList.get(0);
-                    notes = note.asText();
-                    System.out.println("   Notes: " + note.asText());
-                }
+//                String notes = "";
+//                String xpathNotes = "//*[@id=\"oc_" + number + "_Notes\"]/div/div/div";
+//                ArrayList<HtmlDivision> notesList = (ArrayList<HtmlDivision>) page.getByXPath(xpathNotes);
+//                if(!notesList.isEmpty()) {
+//                    final HtmlDivision note = notesList.get(0);
+//                    notes = note.asText();
+//                    System.out.println("   Notes: " + note.asText());
+//                }
 
                 System.out.println("   Type-of-source: Weakness Database");
                 System.out.println("   Type: Weakness");
@@ -84,11 +93,11 @@ public class CWECrawler {
                 final HtmlTableDataCell dateText = date.get(0);
                 System.out.println("   Date: " + dateText.asText());
 
-                System.out.println("   CVE-link: " + "https://cve.mitre.org/cgi-bin/cvename.cgi?name=" + id);
+                System.out.println("   CWE-link: " + "https://cve.mitre.org/cgi-bin/cvename.cgi?name=" + id);
                 System.out.println();
 
                 builder.append(id + ";");
-                builder.append(desc.asText().replace("\n", " ") + ". " + notes.replace("\n", " ") + ";");
+                builder.append(desc.asText().replace("\n", " ") +";");
                 builder.append("Vulnerability" + ";");
                 builder.append("Vulnerability Database" + ";");
                 builder.append(weaknessText + ";");

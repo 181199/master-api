@@ -15,11 +15,11 @@ public class CAPECCrawler {
 
     public static void main(String[] args) {
 
-        String newFile = "/Users/anja/Desktop/master/api/files/capecTest.csv";
-        queryCVE(newFile, 100);
+        String newFile = "/Users/anja/Desktop/master/api/files/sources/capec.csv";
+        queryCAPEC(newFile, 1000);
     }
 
-    public static void queryCVE(String newFile, int numQueries){
+    public static void queryCAPEC(String newFile, int numQueries){
         PrintWriter pw = null;
         try {
             pw = new PrintWriter(new File(newFile));
@@ -33,6 +33,7 @@ public class CAPECCrawler {
         WebClient client = new WebClient();
         client.getOptions().setCssEnabled(false);
         client.getOptions().setJavaScriptEnabled(false);
+        client.getOptions().setThrowExceptionOnFailingStatusCode(false);
 
         int number = 1;
         while (number <= numQueries) {
@@ -41,6 +42,10 @@ public class CAPECCrawler {
                 HtmlPage page = client.getPage(searchUrl);
 
                 ArrayList<HtmlHeading2> titleList = (ArrayList<HtmlHeading2>) page.getByXPath("//*[@id=\"Contentpane\"]/div[1]/table/tbody/tr/td/h2");
+                if(titleList.isEmpty()){
+                    number++;
+                    continue;
+                }
                 final HtmlHeading2 weakness = titleList.get(0);
                 if(weakness.asText().contains("CATEGORY") || weakness.asText().contains("DEPRECATED")){
                     number++;
@@ -60,9 +65,12 @@ public class CAPECCrawler {
 
                 System.out.println("   Weakness: " + weaknessText);
 
-                //*[@id="oc_16_Description"]/div
                 String xpathDesc = "//*[@id=\"oc_" + number + "_Description\"]/div";
                 ArrayList<HtmlDivision> list = (ArrayList<HtmlDivision>) page.getByXPath(xpathDesc);
+                if(list.isEmpty()){
+                    number++;
+                    continue;
+                }
                 final HtmlDivision desc = list.get(0);
                 System.out.println("   Description: " + desc.asText());
 
@@ -74,7 +82,7 @@ public class CAPECCrawler {
                 final DomText dateText = date.get(0);
                 System.out.println("   Date: " + dateText.asText());
 
-                System.out.println("   CVE-link: " + "https://cve.mitre.org/cgi-bin/cvename.cgi?name=" + id);
+                System.out.println("   CAPEC-link: " + "https://cve.mitre.org/cgi-bin/cvename.cgi?name=" + id);
                 System.out.println();
 
                 builder.append(id + ";");
