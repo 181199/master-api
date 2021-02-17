@@ -34,7 +34,9 @@ public class SimilarityScore {
         //test(benchmark, docs, features);
 
         //listMostSimilarAndSuggestTagsTFIDF(benchmark, docs, features);
-        listMostSimilarAndSuggestTagsWord2Vec(benchmark, docs, word2vec);
+        //listMostSimilarAndSuggestTagsWord2Vec(benchmark, docs, word2vec);
+        //listMostSimilarSourceForBRsTFIDF(benchmark, docs, features);
+        listMostSimilarSourceForBRsWord2Vec(benchmark, docs, word2vec);
 //
 //        String newFilePath = path + "stackoverflowSR_new_similarity.csv";
 //        createDatasetFromCVESimilarity(docs, newFilePath, documentsToKeep);
@@ -51,6 +53,7 @@ public class SimilarityScore {
 //        createDatasetFromCVESimilarity(docs2, newFilePath2, documentsToKeep2);
     }
 
+    // prints the most similar bug report for each report in benchmark dataset using TFIDF and cosine similarity and prints suggested tags
     public static void listMostSimilarAndSuggestTagsTFIDF(String benchmarkDataset, String file, String features) throws IOException {
         Documents d = new Documents();
 
@@ -89,19 +92,7 @@ public class SimilarityScore {
                     }
                 }
 
-                double severityScore = 0.0;
-                String severity = "";
-                try (BufferedReader bw = new BufferedReader(new FileReader(benchmarkDataset))) {
-                    while ((line = bw.readLine()) != null) {
-                        String[] cols = line.split(";");
-                        if(benchmarkIds.get(k).equals(cols[0])) {
-                            severityScore = Double.parseDouble(cols[2]);
-                            severity = cols[3];
-                        }
-                    }
-                }
-                System.out.println(benchmarkIds.get(k) + " and SO_" + bugIds.get(n) + ": " + score);
-                System.out.println("Suggested tags: " + "Score: " + severityScore + " Severity: " + severity + "\n");
+                printTags(k, n, benchmarkDataset, benchmarkIds, bugIds, score, false);
 
                 if(!documentsToKeep.contains(bugIds.get(n))) {
                     documentsToKeep.add(bugIds.get(n));
@@ -111,6 +102,7 @@ public class SimilarityScore {
         }
     }
 
+    // prints the most similar report from benchmark dataset for each bug report using TFIDF and cosine similarity and prints suggested tags
     public static void listMostSimilarSourceForBRsTFIDF(String benchmarkDataset, String file, String features) throws IOException {
         Documents d = new Documents();
 
@@ -151,13 +143,14 @@ public class SimilarityScore {
                 if(score == 0.0){
                     System.out.println("SO_" + bugIds.get(k) + " got 0.0 similarity for all documents");
                 } else {
-                    System.out.println("SO_" + bugIds.get(k) + " and " + benchmarkIds.get(n) + ": " + score);
+                    printTags(n, k, benchmarkDataset, benchmarkIds, bugIds, score, true);
                 }
                 score = 0.0;
             }
         }
     }
 
+    // prints the most similar bug report for each report in benchmark dataset using Word2Vec and cosine similarity and prints suggested tags
     public static void listMostSimilarAndSuggestTagsWord2Vec(String benchmarkDataset, String file, String word2vec) throws IOException, NoSuchMethodException, IllegalAccessException, InvocationTargetException {
         Word2VecCalculator w = new Word2VecCalculator();
 
@@ -192,20 +185,7 @@ public class SimilarityScore {
                 }
             }
 
-            String line = "";
-            double severityScore = 0.0;
-            String severity = "";
-            try (BufferedReader bw = new BufferedReader(new FileReader(benchmarkDataset))) {
-                while ((line = bw.readLine()) != null) {
-                    String[] cols = line.split(";");
-                    if(benchmarkIds.get(i).equals(cols[0])) {
-                        severityScore = Double.parseDouble(cols[2]);
-                        severity = cols[3];
-                    }
-                }
-            }
-            System.out.println(benchmarkIds.get(i) + " and SO_" + bugIds.get(n) + ": " + score);
-            System.out.println("Suggested tags: " + "Score: " + severityScore + " Severity: " + severity + "\n");
+            printTags(i, n, benchmarkDataset, benchmarkIds, bugIds, score, false);
 
             if(!documentsToKeep.contains(bugIds.get(n))) {
                 documentsToKeep.add(bugIds.get(n));
@@ -214,6 +194,7 @@ public class SimilarityScore {
         }
     }
 
+    // prints the most similar report from benchmark dataset for each  bug report using Word2Vec and cosine similarity and prints suggested tags
     public static void listMostSimilarSourceForBRsWord2Vec(String benchmarkDataset, String file, String word2vec) throws IOException, NoSuchMethodException, IllegalAccessException, InvocationTargetException {
         Word2VecCalculator w = new Word2VecCalculator();
 
@@ -250,12 +231,13 @@ public class SimilarityScore {
             if(score == 0.0){
                 System.out.println("SO_" + bugIds.get(i) + " got 0.0 similarity for all documents");
             } else {
-                System.out.println("SO_" + bugIds.get(i) + " and " + benchmarkIds.get(n) + ": " + score);
+                printTags(n, i, benchmarkDataset, benchmarkIds, bugIds, score, true);
             }
             score = 0.0;
         }
     }
 
+    // creates dataset from the most similar bug reports for each report in benchmark dataset
     public static void createDatasetFromSimilarity(String filePath, String newFilePath, List<String> documents) throws IOException {
         File file = new File(newFilePath);
 
@@ -311,6 +293,7 @@ public class SimilarityScore {
         return ids;
     }
 
+    // creates new dataset from scores TFIDF and Word2Vec scores saved in dataset file
     public static void createDatasetFromScores(String filePath, String newFilePath, boolean tfidf, boolean word2vec, boolean security) throws IOException {
         File file = new File(newFilePath);
 
@@ -374,5 +357,45 @@ public class SimilarityScore {
         if (bw != null)
             bw.close();
     }
+    }
+
+    public static void printTags(int benchmark, int bug, String file, List<String> benchmarkIds, List<String> bugIds, double score, boolean bugFirst){
+        double severityScore = 0.0;
+        String severity = "";
+        String type = "";
+        String typeofsource = "";
+        String weakness = "";
+        String link = "";
+        String line = "";
+        try (BufferedReader bw = new BufferedReader(new FileReader(file))) {
+            while ((line = bw.readLine()) != null) {
+                String[] cols = line.split(";");
+                if(benchmarkIds.get(benchmark).contains("CVE") && benchmarkIds.get(benchmark).equals(cols[0])) {
+                    type = cols[2];
+                    typeofsource = cols[3];
+                    weakness = cols[4];
+                    link = cols[7];
+                    severityScore = Double.parseDouble(cols[8]);
+                    severity = cols[9];
+
+                    if(bugFirst){
+                        System.out.println("SO_" + bugIds.get(bug) + " and " + benchmarkIds.get(benchmark) + ": " + score);
+                    } else {
+                        System.out.println(benchmarkIds.get(benchmark) + " and SO_" + bugIds.get(bug) + ": " + score);
+                    }
+                    System.out.println("Suggested tags: \n" + "Type: " + type + " Type-of-source: " + typeofsource + " Weakness: " + weakness + " Score: " + severityScore + " Severity: " + severity + " Link: " + link + "\n");
+                } else if (benchmarkIds.get(benchmark).equals(cols[0])){
+                    type = cols[2];
+                    typeofsource = cols[3];
+                    weakness = cols[4];
+                    link = cols[6];
+
+                    System.out.println(benchmarkIds.get(benchmark) + " and SO_" + bugIds.get(bug) + ": " + score);
+                    System.out.println("Suggested tags: \n" + "Type: " + type + " Type-of-source: " + typeofsource + " Weakness: " + weakness + " Link: " + link + "\n");
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }
