@@ -27,8 +27,9 @@ public class CVECrawler {
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         }
+
         builder = new StringBuilder();
-        String columnNamesList = "CVE_ID;Description;Score;Severity;Type;Type-of-source;Weakness;Date;Source;Reference";
+        String columnNamesList = "CVE_ID;Description;Type;Type-of-source;Weakness;Date;Source;Reference;Score;Severity";
         builder.append(columnNamesList + "\n");
 
         WebClient client = new WebClient();
@@ -74,9 +75,13 @@ public class CVECrawler {
                 final HtmlSpan sourceText = source.get(0);
                 System.out.println("   Source: " + sourceText.asText());
 
+                String weak = "Not defined";
                 ArrayList<DomText> weaknessList = (ArrayList<DomText>) page.getByXPath("//*[@id=\"vulnTechnicalDetailsDiv\"]/table/tbody/tr/td[2]/text()");
-                final DomText weakness = weaknessList.get(0);
-                System.out.println("   Weakness: " + weakness.asText());
+                if(!weaknessList.isEmpty()) {
+                    final DomText weakness = weaknessList.get(0);
+                    weak = weakness.asText();
+                    System.out.println("   Weakness: " + weakness.asText());
+                }
 
                 HtmlAnchor severityRating = null;
                 ArrayList<HtmlAnchor> rating = (ArrayList<HtmlAnchor>) page.getByXPath("//*[@id=\"Cvss3NistCalculatorAnchor\"]");
@@ -117,18 +122,16 @@ public class CVECrawler {
                 System.out.println("   CVE-link: " + "https://cve.mitre.org/cgi-bin/cvename.cgi?name=" + id);
                 System.out.println();
 
-                //"CVE_ID;Description;Score;Severity;Type;Type-of-source;Weakness;Date;Source;Reference"
-
                 builder.append(id + ";");
                 builder.append(desc.asText() + ";");
-                builder.append(score + ";");
-                builder.append(severityText + ";");
                 builder.append("Vulnerability" + ";");
                 builder.append("Vulnerability Database" + ";");
-                builder.append(weakness.asText() + ";");
+                builder.append(weak + ";");
                 builder.append(dateText.asText() + ";");
                 builder.append(sourceText.asText() + ";");
-                builder.append("https://cve.mitre.org/cgi-bin/cvename.cgi?name=" + id);
+                builder.append("https://cve.mitre.org/cgi-bin/cvename.cgi?name=" + id + ";");
+                builder.append(score + ";");
+                builder.append(severityText);
                 builder.append('\n');
 
                 number++;
