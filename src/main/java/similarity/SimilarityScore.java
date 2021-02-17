@@ -16,25 +16,25 @@ public class SimilarityScore {
     private static List<String> documentsToKeep2;
 
     public static void main(String args[]) throws FileNotFoundException, IOException, IOException, NoSuchMethodException, IllegalAccessException, InvocationTargetException {
-        String path = "/Users/anja/Desktop/master/api/files/testing/";
+        String path = "/Users/anja/Desktop/master/api/files/test/";
         //createDatasetFromScores(path + "stackoverflowNSR_small_tfidf_word2vec.csv",
         //        path + "stackoverflowNSR_new.csv", true, true, false);
 
-        String benchmark = path + "cveData_small.csv";
-        String docs = path + "stackoverflowSR_small.csv";
-        String docs2 = path + "stackoverflowNSR_small.csv";
+        String benchmark = path + "cveData_100.csv";
+        String docs = path + "stackoverflowSR_100.csv";
+        //String docs2 = path + "stackoverflowNSR_small.csv";
         String features = "/Users/anja/Desktop/master/api/files/FeaturesTFIDF.txt";
         String word2vec = "/Users/anja/Desktop/master/api/files/word2vec_model.txt";
 
-        listMostSimilarWord2VecCve("/Users/anja/Desktop/master/api/files/test/cveData.csv", "/Users/anja/Desktop/master/api/files/test/stackoverflowSBR_small.csv", word2vec);
+        //listMostSimilarWord2VecCve("/Users/anja/Desktop/master/api/files/test/cveData.csv", "/Users/anja/Desktop/master/api/files/test/stackoverflowSBR_small.csv", word2vec);
 
         // SR
         documentsToKeep = new ArrayList<>();
 
-//        listMostSimilarTFIDF(benchmark, docs, features);
-//        System.out.println("TFIDF done");
-//        listMostSimilarWord2Vec(benchmark, docs, word2vec);
-//        System.out.println("Word2Vec done");
+        //test(benchmark, docs, features);
+
+        //listMostSimilarAndSuggestTagsTFIDF(benchmark, docs, features);
+        listMostSimilarAndSuggestTagsWord2Vec(benchmark, docs, word2vec);
 //
 //        String newFilePath = path + "stackoverflowSR_new_similarity.csv";
 //        createDatasetFromCVESimilarity(docs, newFilePath, documentsToKeep);
@@ -51,9 +51,7 @@ public class SimilarityScore {
 //        createDatasetFromCVESimilarity(docs2, newFilePath2, documentsToKeep2);
     }
 
-
-    // burde endres til å ta inn docsArray for benchmark
-    public static void listMostSimilarTFIDF(String benchmarkDataset, String file, String features) throws IOException {
+    public static void listMostSimilarAndSuggestTagsTFIDF(String benchmarkDataset, String file, String features) throws IOException {
         Documents d = new Documents();
 
         List<String> benchmarkIds = getIds(benchmarkDataset, 0);
@@ -68,10 +66,12 @@ public class SimilarityScore {
 
             String line = "";
             int i = 0;
-            while ((line = br.readLine()) != null && i <= 100) {
-                String[] cols = line.split(";");
-                String cleaned = d.cleanText(cols[1]);
-                documents.add(cleaned);
+            while ((line = br.readLine()) != null) {
+                if(i != 0) {
+                    String[] cols = line.split(";");
+                    String cleaned = d.cleanText(cols[1]);
+                    documents.add(cleaned);
+                }
                 i++;
             }
 
@@ -88,7 +88,21 @@ public class SimilarityScore {
                         n = j;
                     }
                 }
+
+                double severityScore = 0.0;
+                String severity = "";
+                try (BufferedReader bw = new BufferedReader(new FileReader(benchmarkDataset))) {
+                    while ((line = bw.readLine()) != null) {
+                        String[] cols = line.split(";");
+                        if(benchmarkIds.get(k).equals(cols[0])) {
+                            severityScore = Double.parseDouble(cols[2]);
+                            severity = cols[3];
+                        }
+                    }
+                }
                 System.out.println(benchmarkIds.get(k) + " and SO_" + bugIds.get(n) + ": " + score);
+                System.out.println("Suggested tags: " + "Score: " + severityScore + " Severity: " + severity + "\n");
+
                 if(!documentsToKeep.contains(bugIds.get(n))) {
                     documentsToKeep.add(bugIds.get(n));
                 }
@@ -97,8 +111,7 @@ public class SimilarityScore {
         }
     }
 
-    // burde endres til å ta inn docsArray for benchmark
-    public static void listMostSimilarTFIDFCve(String benchmarkDataset, String file, String features) throws IOException {
+    public static void listMostSimilarSourceForBRsTFIDF(String benchmarkDataset, String file, String features) throws IOException {
         Documents d = new Documents();
 
         List<String> benchmarkIds = getIds(benchmarkDataset, 0);
@@ -114,9 +127,11 @@ public class SimilarityScore {
             String line = "";
             int i = 0;
             while ((line = br.readLine()) != null && i <= 100) {
-                String[] cols = line.split(";");
-                String cleaned = d.cleanText(cols[1]);
-                documents.add(cleaned);
+                if(i != 0) {
+                    String[] cols = line.split(";");
+                    String cleaned = d.cleanText(cols[1]);
+                    documents.add(cleaned);
+                }
                 i++;
             }
 
@@ -143,7 +158,7 @@ public class SimilarityScore {
         }
     }
 
-    public static void listMostSimilarWord2Vec(String benchmarkDataset, String file, String word2vec) throws IOException, NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+    public static void listMostSimilarAndSuggestTagsWord2Vec(String benchmarkDataset, String file, String word2vec) throws IOException, NoSuchMethodException, IllegalAccessException, InvocationTargetException {
         Word2VecCalculator w = new Word2VecCalculator();
 
         Word2Vec model = w.getWord2Vec(word2vec);
@@ -176,7 +191,22 @@ public class SimilarityScore {
                     n = j;
                 }
             }
+
+            String line = "";
+            double severityScore = 0.0;
+            String severity = "";
+            try (BufferedReader bw = new BufferedReader(new FileReader(benchmarkDataset))) {
+                while ((line = bw.readLine()) != null) {
+                    String[] cols = line.split(";");
+                    if(benchmarkIds.get(i).equals(cols[0])) {
+                        severityScore = Double.parseDouble(cols[2]);
+                        severity = cols[3];
+                    }
+                }
+            }
             System.out.println(benchmarkIds.get(i) + " and SO_" + bugIds.get(n) + ": " + score);
+            System.out.println("Suggested tags: " + "Score: " + severityScore + " Severity: " + severity + "\n");
+
             if(!documentsToKeep.contains(bugIds.get(n))) {
                 documentsToKeep.add(bugIds.get(n));
             }
@@ -184,7 +214,7 @@ public class SimilarityScore {
         }
     }
 
-    public static void listMostSimilarWord2VecCve(String benchmarkDataset, String file, String word2vec) throws IOException, NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+    public static void listMostSimilarSourceForBRsWord2Vec(String benchmarkDataset, String file, String word2vec) throws IOException, NoSuchMethodException, IllegalAccessException, InvocationTargetException {
         Word2VecCalculator w = new Word2VecCalculator();
 
         Word2Vec model = w.getWord2Vec(word2vec);
@@ -226,7 +256,7 @@ public class SimilarityScore {
         }
     }
 
-    public static void createDatasetFromCVESimilarity(String filePath, String newFilePath, List<String> documents) throws IOException {
+    public static void createDatasetFromSimilarity(String filePath, String newFilePath, List<String> documents) throws IOException {
         File file = new File(newFilePath);
 
         BufferedReader br = null;
@@ -269,7 +299,7 @@ public class SimilarityScore {
 
             String line = "";
             int i = 0;
-            while ((line = br.readLine()) != null && i <= 100) {
+            while ((line = br.readLine()) != null) {
                 String[] cols = line.split(";");
                 if(i != 0) {
                     ids.add(cols[column]);
