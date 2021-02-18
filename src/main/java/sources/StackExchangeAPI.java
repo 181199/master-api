@@ -450,6 +450,7 @@ public class StackExchangeAPI {
             } catch (IOException e) {
                 e.printStackTrace();
             }
+            page++;
         }
         pw.write(builder.toString());
         pw.close();
