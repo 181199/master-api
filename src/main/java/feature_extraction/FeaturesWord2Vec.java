@@ -9,8 +9,12 @@ import org.deeplearning4j.text.tokenization.tokenizerfactory.DefaultTokenizerFac
 import org.deeplearning4j.text.tokenization.tokenizerfactory.TokenizerFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import similarity.Word2VecSimilarity;
 
 import java.io.*;
+import java.lang.reflect.InvocationTargetException;
+import java.util.Arrays;
+import java.util.List;
 import java.util.regex.Pattern;
 
 public class FeaturesWord2Vec {
@@ -19,10 +23,19 @@ public class FeaturesWord2Vec {
 
     public static String dataLocalPath;
 
-    public static void main(String[] args) throws Exception {
+    private static StringBuilder builder;
 
-        createCleanedTextFile("./files/cveData.csv", "./files/sentences.txt");
-        String filePath = new File(dataLocalPath,"./files/sentences.txt").getAbsolutePath();
+    public static void main(String[] args) throws Exception {
+        String file = "/Users/anja/Desktop/master/api/files/sources/capec.csv";
+
+        createWord2VecModel(file,"./files/capec_word2vec_model.txt", 1, 100, 100, 42, 5);
+
+        saveWordsToFile("/Users/anja/Desktop/master/api/files/features/capec_word2vec_model.txt", "/Users/anja/Desktop/master/api/files/features/CAPECFeaturesWord2Vec.txt", 200);
+    }
+
+    public static void createWord2VecModel(String file, String modelFile, int minWordFrequency, int iterations, int layerSize, int seed, int windowSize) throws FileNotFoundException {
+        createCleanedTextFile(file, "./files/sentences_capec.txt");
+        String filePath = new File(dataLocalPath,"./files/sentences_capec.txt").getAbsolutePath();
 
         log.info("Load & Vectorize Sentences....");
         // Strip white space before and after for each line
@@ -34,11 +47,11 @@ public class FeaturesWord2Vec {
 
         log.info("Building model....");
         Word2Vec vec = new Word2Vec.Builder()
-                .minWordFrequency(1)
-                .iterations(1)
-                .layerSize(100)
-                .seed(42)
-                .windowSize(5)
+                .minWordFrequency(minWordFrequency)
+                .iterations(iterations)
+                .layerSize(layerSize)
+                .seed(seed)
+                .windowSize(windowSize)
                 .iterate(iter)
                 .tokenizerFactory(t)
                 .build();
@@ -49,7 +62,7 @@ public class FeaturesWord2Vec {
         log.info("Writing word vectors to text file....");
 
         // saving the model
-        WordVectorSerializer.writeWord2VecModel(vec, "./files/word2vec_model.txt");
+        WordVectorSerializer.writeWord2VecModel(vec, modelFile);
     }
 
     public static void createCleanedTextFile(String infile, String outfile) {
@@ -71,6 +84,32 @@ public class FeaturesWord2Vec {
         }catch(Exception e) {
             //
         }
+    }
+
+    public static void saveWordsToFile(String word2Vec, String newFile, int numWords) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+        Word2VecSimilarity w = new Word2VecSimilarity();
+        Word2Vec model = w.getWord2Vec(word2Vec);
+
+        List<String> stopwords = Arrays.asList("i", "me", "my", "myself", "we", "our", "ours", "ourselves", "you", "your", "yours", "yourself", "yourselves", "he", "him", "his", "himself", "she", "her", "hers", "herself", "it", "its", "itself", "they", "them", "their", "theirs", "themselves", "what", "which", "who", "whom", "this", "that", "these", "those", "am", "is", "are", "was", "were", "be", "been", "being", "have", "has", "had", "having", "do", "does", "did", "doing", "a", "an", "the", "and", "but", "if", "or", "because", "as", "until", "while", "of", "at", "by", "for", "with", "about", "against", "between", "into", "through", "during", "before", "after", "above", "below", "to", "from", "up", "down", "in", "out", "on", "off", "over", "under", "again", "further", "then", "once", "here", "there", "when", "where", "why", "how", "all", "any", "both", "each", "few", "more", "most", "other", "some", "such", "no", "nor", "not", "only", "own", "same", "so", "than", "too", "very", "s", "t", "can", "will", "just", "don", "should", "now");
+
+        PrintWriter pw = null;
+        try {
+            pw = new PrintWriter(new File(newFile));
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+
+        builder = new StringBuilder();
+
+        for(int i = 0; i < numWords; i++) {
+            String word = model.vocab().wordAtIndex(i);
+            if(!stopwords.contains(word) && word.length() > 1) {
+                builder.append(word + "\n");
+            }
+        }
+
+        pw.write(builder.toString());
+        pw.close();
     }
 
     // use the same text cleaning function as above for creating our word2vec dataset for the NN
