@@ -46,9 +46,85 @@ public class StackExchangeAPI {
         String terms = "/Users/anja/Desktop/master/api/files/features/";
         String word2vec = "/Users/anja/Desktop/master/api/files/features/";
 
-        String path = "./files/experiments/tfidf/";
+        String path = "./files/experiments/tfidf_2/";
 
-//        getNSRs("./files/experiments/NSR.csv", site, 1000, true);
+        getNSRs("./files/experiments/stackoverflow_NSR.csv", site, 1000, false);
+
+        // SO, TFIDF
+//        getSRsWithThresholdTFIDF(path + "stackoverflow_CVE/stackoverflow_SR.csv", dataset + "cve.csv", terms + "CVEFeaturesTFIDF.txt",  "stackoverflow", 0.7, 1000, false, false, true);
+//        m.addSecurityLabel(path + "stackoverflow_CVE/stackoverflow_SR.csv", path + "stackoverflow_CVE/stackoverflowSR.csv", true);
+//        m.merge(path + "stackoverflow_CVE/stackoverflowSR.csv", "./files/experiments/NSR_sec.csv", path + "stackoverflow_CVE/stackoverflow_CVE.csv");
+//
+//        getSRsWithThresholdTFIDF(path + "stackoverflow_CWE/stackoverflow_SR.csv", dataset + "cwe.csv", terms + "CWEFeaturesTFIDF.txt",  "stackoverflow",0.7, 1000,false, false, true);
+//        m.addSecurityLabel(path + "stackoverflow_CWE/stackoverflow_SR.csv", path + "stackoverflow_CWE/stackoverflowSR.csv", true);
+//        m.merge(path + "stackoverflow_CWE/stackoverflowSR.csv", "./files/experiments/NSR_sec.csv", path + "stackoverflow_CWE/stackoverflow_CWE.csv");
+//
+//        getSRsWithThresholdTFIDF(path + "stackoverflow_CAPEC/stackoverflow_SR.csv", dataset + "capec.csv", terms + "CAPECFeaturesTFIDF.txt", "stackoverflow",0.7, 1000, false, false, true);
+//        m.addSecurityLabel(path + "stackoverflow_CAPEC/stackoverflow_SR.csv", path + "stackoverflow_CAPEC/stackoverflowSR.csv", true);
+//        m.merge(path + "stackoverflow_CAPEC/stackoverflowSR.csv", "./files/experiments/NSR_sec.csv", path + "stackoverflow_CAPEC/stackoverflow_CAPEC.csv");
+
+//        path = "./files/experiments/tfidfword2vec/";
+//
+//        // SO, TF-IDF + Word2Vec
+//        getSRsWithThreshold(path + "stackoverflow_CVE/stackoverflow_SR.csv", dataset + "cve.csv", terms + "CVEFeaturesTFIDF.txt", word2vec + "cve_word2vec_model.txt", "stackoverflow",0.7, 1000, true, true, true);
+//        m.addSecurityLabel(path + "stackoverflow_CVE/stackoverflow_SR.csv", path + "stackoverflow_CVE/stackoverflowSR.csv", true);
+//        m.merge(path + "stackoverflow_CVE/stackoverflowSR.csv", "./files/experiments/NSR_sec.csv", path + "stackoverflow_CVE/stackoverflow_CVE.csv");
+////
+//        getSRsWithThreshold(path + "stackoverflow_CWE/stackoverflow_SR.csv", dataset + "cwe.csv", terms + "CWEFeaturesTFIDF.txt", word2vec + "cwe_word2vec_model.txt", "stackoverflow",0.7, 1000, true, true, true);
+//        m.addSecurityLabel(path + "stackoverflow_CWE/stackoverflow_SR.csv", path + "stackoverflow_CWE/stackoverflowSR.csv", true);
+//        m.merge(path + "stackoverflow_CWE/stackoverflowSR.csv", "./files/experiments/NSR_sec.csv", path + "stackoverflow_CWE/stackoverflow_CWE.csv");
+////
+//        getSRsWithThreshold(path + "stackoverflow_CAPEC/stackoverflow_SR.csv", dataset + "capec.csv", terms + "CAPECFeaturesTFIDF.txt", word2vec + "capec_word2vec_model.txt", "stackoverflow",0.7, 1000, true, true, true);
+//        m.addSecurityLabel(path + "stackoverflow_CAPEC/stackoverflow_SR.csv", path + "stackoverflow_CAPEC/stackoverflowSR.csv", true);
+//        m.merge(path + "stackoverflow_CAPEC/stackoverflowSR.csv", "./files/experiments/NSR_sec.csv", path + "stackoverflow_CAPEC/stackoverflow_CAPEC.csv");
+//
+//        System.out.println("TF-IDF + Word2Vec done");
+        path = "./files/experiments/word2vec/";
+
+//        // SO, Word2Vec
+//        getSRsWithThresholdWord2Vec(path + "stackoverflow_CVE/stackoverflow_SR.csv", dataset + "cve.csv", word2vec + "cve_word2vec_model.txt", "stackoverflow", 0.7, 1000, true, true, true);
+//        m.addSecurityLabel(path + "stackoverflow_CVE/stackoverflow_SR.csv", path + "stackoverflow_CVE/stackoverflowSR.csv", true);
+//        m.merge(path + "stackoverflow_CVE/stackoverflowSR.csv", "./files/experiments/NSR_sec.csv", path + "stackoverflow_CVE/stackoverflow_CVE.csv");
+//
+//        getSRsWithThresholdWord2Vec(path + "stackoverflow_CWE/stackoverflow_SR.csv", dataset + "cwe.csv",  word2vec + "cwe_word2vec_model.txt", "stackoverflow",0.7, 1000,true, true, true);
+//        m.addSecurityLabel(path + "stackoverflow_CWE/stackoverflow_SR.csv", path + "stackoverflow_CWE/stackoverflowSR.csv", true);
+//        m.merge(path + "stackoverflow_CWE/stackoverflowSR.csv", "./files/experiments/NSR_sec.csv", path + "stackoverflow_CWE/stackoverflow_CWE.csv");
+
+//        getSRsWithThresholdWord2Vec(path + "stackoverflow_CAPEC/stackoverflow_SR.csv", dataset + "capec.csv", word2vec + "capec_word2vec_model.txt", "stackoverflow",0.7, 1000, true, true, true);
+//        m.addSecurityLabel(path + "stackoverflow_CAPEC/stackoverflow_SR.csv", path + "stackoverflow_CAPEC/stackoverflowSR.csv", true);
+//        m.merge(path + "stackoverflow_CAPEC/stackoverflowSR.csv", "./files/experiments/NSR_sec.csv", path + "stackoverflow_CAPEC/stackoverflow_CAPEC.csv");
+
+        System.out.println("Word2Vec done");
+//        path = "./files/experiments/word2vecfeatures/";
+//
+////        // SO, Word2VecFeatures
+//        getSRsWithThresholdTFIDF(path + "stackoverflow_CVE/stackoverflow_SR.csv", dataset + "cve.csv", terms + "CVEFeaturesWord2Vec.txt",  "stackoverflow",0.7, 1000,true, true, true);
+//        m.addSecurityLabel(path + "stackoverflow_CVE/stackoverflow_SR.csv", path + "stackoverflow_CVE/stackoverflowSR.csv", true);
+//        m.merge(path + "stackoverflow_CVE/stackoverflowSR.csv", "./files/experiments/NSR_sec.csv", path + "stackoverflow_CVE/stackoverflow_CVE.csv");
+////
+//        getSRsWithThresholdTFIDF(path + "stackoverflow_CWE/stackoverflow_SR.csv", dataset + "cwe.csv", terms + "CWEFeaturesWord2Vec.txt",  "stackoverflow",0.7, 1000,true, true, true);
+//        m.addSecurityLabel(path + "stackoverflow_CWE/stackoverflow_SR.csv", path + "stackoverflow_CWE/stackoverflowSR.csv", true);
+//        m.merge(path + "stackoverflow_CWE/stackoverflowSR.csv", "./files/experiments/NSR_sec.csv", path + "stackoverflow_CWE/stackoverflow_CWE.csv");
+////
+//        getSRsWithThresholdTFIDF(path + "stackoverflow_CAPEC/stackoverflow_SR.csv", dataset + "capec.csv", terms + "CAPECFeaturesWord2Vec.txt", "stackoverflow",0.7, 1000,true, true, true);
+//        m.addSecurityLabel(path + "stackoverflow_CAPEC/stackoverflow_SR.csv", path + "stackoverflow_CAPEC/stackoverflowSR.csv", true);
+//        m.merge(path + "stackoverflow_CAPEC/stackoverflowSR.csv", "./files/experiments/NSR_sec.csv", path + "stackoverflow_CAPEC/stackoverflow_CAPEC.csv");
+//
+//        System.out.println("Word2Vec Features done");
+        path = "./files/experiments/word2vecfeatures_word2vec/";
+
+//         //SO, Word2Vec + Word2Vec Features
+//        getSRsWithThreshold(path + "stackoverflow_CVE/stackoverflow_SR.csv", dataset + "cve.csv", terms + "CVEFeaturesWord2Vec.txt", word2vec + "cve_word2vec_model.txt", "stackoverflow",0.7, 1000,true, true, true);
+//        m.addSecurityLabel(path + "stackoverflow_CVE/stackoverflow_SR.csv", path + "stackoverflow_CVE/stackoverflowSR.csv", true);
+//        m.merge(path + "stackoverflow_CVE/stackoverflowSR.csv", "./files/experiments/NSR_sec.csv", path + "stackoverflow_CVE/stackoverflow_CVE.csv");
+//
+//        getSRsWithThreshold(path + "stackoverflow_CWE/stackoverflow_SR.csv", dataset + "cwe.csv", terms + "CWEFeaturesWord2Vec.txt", word2vec + "cwe_word2vec_model.txt", "stackoverflow",0.7, 1000,true, true, true);
+//        m.addSecurityLabel(path + "stackoverflow_CWE/stackoverflow_SR.csv", path + "stackoverflow_CWE/stackoverflowSR.csv", true);
+//        m.merge(path + "stackoverflow_CWE/stackoverflowSR.csv", "./files/experiments/NSR_sec.csv", path + "stackoverflow_CWE/stackoverflow_CWE.csv");
+//
+//        getSRsWithThreshold(path + "stackoverflow_CAPEC/stackoverflow_SR.csv", dataset + "capec.csv", terms + "CAPECFeaturesWord2Vec.txt", word2vec + "capec_word2vec_model.txt", "stackoverflow",0.7, 1000,true, true, true);
+//        m.addSecurityLabel(path + "stackoverflow_CAPEC/stackoverflow_SR.csv", path + "stackoverflow_CAPEC/stackoverflowSR.csv", true);
+//        m.merge(path + "stackoverflow_CAPEC/stackoverflowSR.csv", "./files/experiments/NSR_sec.csv", path + "stackoverflow_CAPEC/stackoverflow_CAPEC.csv");
 
     }
 
@@ -89,10 +165,16 @@ public class StackExchangeAPI {
                     hasMore = false;
                 }
 
-                boolean security = false;
-                JSONArray tokenList = result.getJSONArray("items");
+                JSONArray tokenList = new JSONArray();
+                try {
+                    tokenList = result.getJSONArray("items");
+                } catch (Exception e) {
+                    break;
+                }
                 for (int i = 0; i < tokenList.length(); i++) {
                     JSONObject oj = tokenList.getJSONObject(i);
+
+                    boolean security = false;
 
                     JSONArray tags = oj.getJSONArray("tags");
                     for (int t = 0; t < tags.length(); t++) {
@@ -184,13 +266,18 @@ public class StackExchangeAPI {
 
                 hasMore = result.getBoolean("has_more");
 
-                boolean security = false;
-
-                JSONArray tokenList = result.getJSONArray("items");
+                JSONArray tokenList = new JSONArray();
+                try {
+                    tokenList = result.getJSONArray("items");
+                } catch (Exception e) {
+                    break;
+                }
                 for (int i = 0; i < tokenList.length(); i++) {
                     JSONObject oj = tokenList.getJSONObject(i);
                     String title = oj.getString("title");
                     title = title.replace(";", "");
+
+                    boolean security = false;
 
                     JSONArray tags = oj.getJSONArray("tags");
                     for (int j = 0; j < tags.length(); j++) {
@@ -311,7 +398,12 @@ public class StackExchangeAPI {
 
                 boolean security = false;
 
-                JSONArray tokenList = result.getJSONArray("items");
+                JSONArray tokenList = new JSONArray();
+                try {
+                    tokenList = result.getJSONArray("items");
+                } catch (Exception e) {
+                    break;
+                }
 
                 for (int i = 0; i < tokenList.length(); i++) {
                     JSONObject oj = tokenList.getJSONObject(i);
@@ -462,10 +554,16 @@ public class StackExchangeAPI {
                     hasMore = false;
                 }
 
-                boolean security = false;
-                JSONArray tokenList = result.getJSONArray("items");
+                JSONArray tokenList = new JSONArray();
+                try {
+                    tokenList = result.getJSONArray("items");
+                } catch (Exception e) {
+                    break;
+                }
                 for (int i = 0; i < tokenList.length(); i++) {
                     JSONObject oj = tokenList.getJSONObject(i);
+
+                    boolean security = false;
 
                     JSONArray tags = oj.getJSONArray("tags");
                     for (int t = 0; t < tags.length(); t++) {
@@ -602,11 +700,16 @@ public class StackExchangeAPI {
                     hasMore = false;
                 }
 
-                boolean security = false;
-
-                JSONArray tokenList = result.getJSONArray("items");
+                JSONArray tokenList = new JSONArray();
+                try {
+                    tokenList = result.getJSONArray("items");
+                } catch (Exception e) {
+                    break;
+                }
                 for (int i = 0; i < tokenList.length(); i++) {
                     JSONObject oj = tokenList.getJSONObject(i);
+
+                    boolean security = false;
 
                     JSONArray tags = oj.getJSONArray("tags");
                     for (int j = 0; j < tags.length(); j++) {
@@ -737,10 +840,16 @@ public class StackExchangeAPI {
                     hasMore = false;
                 }
 
-                boolean security = false;
-                JSONArray tokenList = result.getJSONArray("items");
+                JSONArray tokenList = new JSONArray();
+                try {
+                    tokenList = result.getJSONArray("items");
+                } catch (Exception e) {
+                    break;
+                }
                 for (int i = 0; i < tokenList.length(); i++) {
                     JSONObject oj = tokenList.getJSONObject(i);
+
+                    boolean security = false;
 
                     JSONArray tags = oj.getJSONArray("tags");
                     for (int t = 0; t < tags.length(); t++) {
@@ -876,11 +985,16 @@ public class StackExchangeAPI {
                     hasMore = false;
                 }
 
-                boolean security = false;
-
-                JSONArray tokenList = result.getJSONArray("items");
+                JSONArray tokenList = new JSONArray();
+                try {
+                    tokenList = result.getJSONArray("items");
+                } catch (Exception e) {
+                    break;
+                }
                 for (int i = 0; i < tokenList.length(); i++) {
                     JSONObject oj = tokenList.getJSONObject(i);
+
+                    boolean security = false;
 
                     JSONArray tags = oj.getJSONArray("tags");
                     for (int j = 0; j < tags.length(); j++) {
@@ -996,7 +1110,7 @@ public class StackExchangeAPI {
         Boolean hasMore = true;
         int page = 1;
         int SRs = 0;
-        while (SRs <= numSRs) {
+        while (SRs < numSRs) {
             HttpClient client = HttpClientBuilder.create()
                     .setDefaultRequestConfig(RequestConfig.custom()
                             .setCookieSpec(CookieSpecs.STANDARD).build())
@@ -1019,10 +1133,16 @@ public class StackExchangeAPI {
                     hasMore = false;
                 }
 
-                boolean security = false;
-                JSONArray tokenList = result.getJSONArray("items");
+                JSONArray tokenList = new JSONArray();
+                try {
+                    tokenList = result.getJSONArray("items");
+                } catch (Exception e) {
+                    break;
+                }
                 for (int i = 0; i < tokenList.length(); i++) {
                     JSONObject oj = tokenList.getJSONObject(i);
+
+                    boolean security = false;
 
                     JSONArray tags = oj.getJSONArray("tags");
                     for (int t = 0; t < tags.length(); t++) {
