@@ -379,17 +379,17 @@ public class StackExchangeAPI {
 
                         cleanText = cleanText.replace("\n", "").replace("\r", "").replace(";", "");
 
-                        double tfidf = getTFIDFScore(cleanText, features, docsArray, tfidfDocsVector, d);
+                        double tfidf = getTFIDFScore(cleanText, features, docsArray, tfidfDocsVector, d, threshold);
 
-                        double w2v = getWord2VecScore(cleanText, benchmarkSentences, input_vectors, model, w, numFeatures);
+                        double w2v = getWord2VecScore(cleanText, benchmarkSentences, input_vectors, model, w, numFeatures, threshold);
 
                         double score = (tfidf + w2v) / 2;
 
                         if (score <= threshold && !security && NSRs < numNSRs) {
                             if (!postAnswers.isEmpty() && getAnswersWithThreshold) {
                                 for (int p = 0; p < postAnswers.size(); p++) {
-                                    double tfidfAnswer = getTFIDFScore(postAnswers.get(p), features, docsArray, tfidfDocsVector, d);
-                                    double w2vAnswer = getWord2VecScore(postAnswers.get(p), benchmarkSentences, input_vectors, model, w, numFeatures);
+                                    double tfidfAnswer = getTFIDFScore(postAnswers.get(p), features, docsArray, tfidfDocsVector, d, threshold);
+                                    double w2vAnswer = getWord2VecScore(postAnswers.get(p), benchmarkSentences, input_vectors, model, w, numFeatures, threshold);
 
                                     double answerScore = (tfidfAnswer + w2vAnswer) / 2;
                                     if (answerScore <= threshold) {
@@ -426,7 +426,7 @@ public class StackExchangeAPI {
     }
 
     // using the average of the highest tfidf and word2vec score over a set threshold
-    public static void getSRsWithThreshold(String newFile, String benchmarkDataset, String terms, String word2vec, String site, double threshold, int numSRs, int numFeatures, boolean getAnswers, boolean getAnswersWithThreshold, boolean appendScoreToCSV) throws IOException, NoSuchMethodException, IllegalAccessException, InvocationTargetException, InterruptedException {
+    public static void getSRsWithThreshold(String newFile, String benchmarkDataset, String terms, String word2vec, String site, String tags, double threshold, int numSRs, int numFeatures, boolean getAnswers, boolean getAnswersWithThreshold, boolean appendScoreToCSV) throws IOException, NoSuchMethodException, IllegalAccessException, InvocationTargetException, InterruptedException {
 
         PrintWriter pw = null;
         try {
@@ -469,7 +469,7 @@ public class StackExchangeAPI {
                     .setDefaultRequestConfig(RequestConfig.custom()
                             .setCookieSpec(CookieSpecs.STANDARD).build())
                     .build();
-            HttpGet request = new HttpGet("https://api.stackexchange.com/2.2/questions?page=" + page + "&pagesize=100&order=desc&sort=activity&site=" + site + "&filter=!--1nZwT3Ejsm&key=IT8vJtd)vD02vi1lzs5mHg((");
+            HttpGet request = new HttpGet("https://api.stackexchange.com/2.2/questions?page=" + page + "&pagesize=100&order=desc&sort=activity&tagged=" + URLEncoder.encode(tags, "UTF-8") + "&site=" + site + "&filter=!--1nZwT3Ejsm&key=IT8vJtd)vD02vi1lzs5mHg((");
 
             try {
                 HttpResponse response = client.execute(request);
@@ -494,17 +494,7 @@ public class StackExchangeAPI {
                     for (int i = 0; i < tokenList.length(); i++) {
                         JSONObject oj = tokenList.getJSONObject(i);
 
-                        boolean security = false;
-
-                        JSONArray tags = oj.getJSONArray("tags");
-                        for (int t = 0; t < tags.length(); t++) {
-                            if (tags.get(t).toString().contains("security")) {
-                                security = true;
-                                break;
-                            }
-                        }
-
-                        if (security && SRs < numSRs) {
+                        if (SRs < numSRs) {
                             String title = oj.getString("title");
                             title = title.replace(";", "");
 
@@ -537,17 +527,17 @@ public class StackExchangeAPI {
 
                             cleanText = cleanText.replace("\n", "").replace("\r", "").replace(";", "");
 
-                            double tfidf = getTFIDFScore(cleanText, features, docsArray, tfidfDocsVector, d);
+                            double tfidf = getTFIDFScore(cleanText, features, docsArray, tfidfDocsVector, d, threshold);
 
-                            double w2v = getWord2VecScore(cleanText, benchmarkSentences, input_vectors, model, w, numFeatures);
+                            double w2v = getWord2VecScore(cleanText, benchmarkSentences, input_vectors, model, w, numFeatures, threshold);
 
                             double score = (tfidf + w2v) / 2;
 
                             if (score >= threshold && SRs < numSRs) {
                                 if (!postAnswers.isEmpty() && getAnswersWithThreshold) {
                                     for (int p = 0; p < postAnswers.size(); p++) {
-                                        double tfidfAnswer = getTFIDFScore(postAnswers.get(p), features, docsArray, tfidfDocsVector, d);
-                                        double w2vAnswer = getWord2VecScore(postAnswers.get(p), benchmarkSentences, input_vectors, model, w, numFeatures);
+                                        double tfidfAnswer = getTFIDFScore(postAnswers.get(p), features, docsArray, tfidfDocsVector, d, threshold);
+                                        double w2vAnswer = getWord2VecScore(postAnswers.get(p), benchmarkSentences, input_vectors, model, w, numFeatures, threshold);
 
                                         double answerScore = (tfidfAnswer + w2vAnswer) / 2;
                                         if (answerScore >= threshold) {
@@ -576,7 +566,6 @@ public class StackExchangeAPI {
             }
             if (hasMore) {
                 page++;
-                Thread.sleep(500);
             } else {
                 break;
             }
@@ -686,12 +675,12 @@ public class StackExchangeAPI {
 
                         cleanText = cleanText.replace("\n", "").replace("\r", "").replace(";", "");
 
-                        double score = getTFIDFScore(cleanText, features, docsArray, tfidfDocsVector, d);
+                        double score = getTFIDFScore(cleanText, features, docsArray, tfidfDocsVector, d, threshold);
 
                         if (score <= threshold && NSRs < numNSRs) {
                             if (!postAnswers.isEmpty() && getAnswersWithThreshold) {
                                 for (int p = 0; p < postAnswers.size(); p++) {
-                                    double answerScore = getTFIDFScore(postAnswers.get(p), features, docsArray, tfidfDocsVector, d);
+                                    double answerScore = getTFIDFScore(postAnswers.get(p), features, docsArray, tfidfDocsVector, d, threshold);
 
                                     if (answerScore <= threshold) {
                                         cleanText = cleanText + " " + postAnswers.get(p);
@@ -726,7 +715,7 @@ public class StackExchangeAPI {
         System.out.println("done!");
     }
 
-    public static void getSRsWithThresholdTFIDF(String newFile, String benchmarkDataset, String terms, String site, double threshold, int numSRs, int numFeatures, boolean getAnswers, boolean getAnswersWithThreshold, boolean appendScoreToCSV) throws IOException, InterruptedException {
+    public static void getSRsWithThresholdTFIDF(String newFile, String benchmarkDataset, String terms, String site, String tags, double threshold, int numSRs, int numFeatures, boolean getAnswers, boolean getAnswersWithThreshold, boolean appendScoreToCSV) throws IOException, InterruptedException {
 
         PrintWriter pw = null;
         try {
@@ -757,7 +746,7 @@ public class StackExchangeAPI {
                     .setDefaultRequestConfig(RequestConfig.custom()
                             .setCookieSpec(CookieSpecs.STANDARD).build())
                     .build();
-            HttpGet request = new HttpGet("https://api.stackexchange.com/2.2/questions?page=" + page + "&pagesize=100&order=desc&sort=activity&site=" + site + "&filter=!--1nZwT3Ejsm&key=IT8vJtd)vD02vi1lzs5mHg((");
+            HttpGet request = new HttpGet("https://api.stackexchange.com/2.2/questions?page=" + page + "&pagesize=100&order=desc&sort=activity&tagged=" + URLEncoder.encode(tags, "UTF-8") + "&site=" + site + "&filter=!--1nZwT3Ejsm&key=IT8vJtd)vD02vi1lzs5mHg((");
 
             try {
                 HttpResponse response = client.execute(request);
@@ -782,17 +771,7 @@ public class StackExchangeAPI {
                     for (int i = 0; i < tokenList.length(); i++) {
                         JSONObject oj = tokenList.getJSONObject(i);
 
-                        boolean security = false;
-
-                        JSONArray tags = oj.getJSONArray("tags");
-                        for (int t = 0; t < tags.length(); t++) {
-                            if (tags.get(t).toString().contains("security")) {
-                                security = true;
-                                break;
-                            }
-                        }
-
-                        if (security && SRs < numSRs) {
+                        if (SRs < numSRs) {
                             String title = oj.getString("title");
                             title = title.replace(";", "");
 
@@ -825,12 +804,12 @@ public class StackExchangeAPI {
 
                             cleanText = cleanText.replace("\n", "").replace("\r", "").replace(";", "");
 
-                            double score = getTFIDFScore(cleanText, features, docsArray, tfidfDocsVector, d);
+                            double score = getTFIDFScore(cleanText, features, docsArray, tfidfDocsVector, d, threshold);
 
                             if (score >= threshold) {
                                 if (!postAnswers.isEmpty() && getAnswersWithThreshold) {
                                     for (int p = 0; p < postAnswers.size(); p++) {
-                                        double answerScore = getTFIDFScore(postAnswers.get(p), features, docsArray, tfidfDocsVector, d);
+                                        double answerScore = getTFIDFScore(postAnswers.get(p), features, docsArray, tfidfDocsVector, d, threshold);
 
                                         if (answerScore >= threshold) {
                                             cleanText = cleanText + " " + postAnswers.get(p);
@@ -858,7 +837,6 @@ public class StackExchangeAPI {
             }
             if (hasMore) {
                 page++;
-                Thread.sleep(500);
             } else {
                 break;
             }
@@ -973,12 +951,12 @@ public class StackExchangeAPI {
 
                         cleanText = cleanText.replace("\n", "").replace("\r", "").replace(";", "");
 
-                        double score = getWord2VecScore(cleanText, benchmarkSentences, input_vectors, model, w, numFeatures);
+                        double score = getWord2VecScore(cleanText, benchmarkSentences, input_vectors, model, w, numFeatures, threshold);
 
                         if (score <= threshold && NSRs < numNSRs) {
                             if (!postAnswers.isEmpty() && getAnswersWithThreshold) {
                                 for (int p = 0; p < postAnswers.size(); p++) {
-                                    double answerScore = getWord2VecScore(postAnswers.get(p), benchmarkSentences, input_vectors, model, w, numFeatures);
+                                    double answerScore = getWord2VecScore(postAnswers.get(p), benchmarkSentences, input_vectors, model, w, numFeatures, threshold);
 
                                     if (answerScore <= threshold) {
                                         cleanText = cleanText + " " + postAnswers.get(p);
@@ -1014,7 +992,7 @@ public class StackExchangeAPI {
         System.out.println("done!");
     }
 
-    public static void getSRsWithThresholdWord2Vec(String newFile, String benchmarkDataset, String word2vec, String site, double threshold, int numSRs, int numFeatures, boolean getAnswers, boolean getAnswersWithThreshold, boolean appendScoreToCSV) throws IOException, NoSuchMethodException, IllegalAccessException, InvocationTargetException, InterruptedException {
+    public static void getSRsWithThresholdWord2Vec(String newFile, String benchmarkDataset, String word2vec, String site, String tags, double threshold, int numSRs, int numFeatures, boolean getAnswers, boolean getAnswersWithThreshold, boolean appendScoreToCSV) throws IOException, NoSuchMethodException, IllegalAccessException, InvocationTargetException, InterruptedException {
 
         PrintWriter pw = null;
         try {
@@ -1051,8 +1029,7 @@ public class StackExchangeAPI {
                     .setDefaultRequestConfig(RequestConfig.custom()
                             .setCookieSpec(CookieSpecs.STANDARD).build())
                     .build();
-            //HttpGet request = new HttpGet("https://api.stackexchange.com/2.2/questions?page=" + page + "&pagesize=100&order=desc&sort=activity&tagged=" + URLEncoder.encode(tags, "UTF-8") + "&site=" + site + "&filter=!--1nZwT3Ejsm&key=IT8vJtd)vD02vi1lzs5mHg((");
-            HttpGet request = new HttpGet("https://api.stackexchange.com/2.2/questions?page=" + page + "&pagesize=100&order=desc&sort=activity&site=" + site + "&filter=!--1nZwT3Ejsm&key=IT8vJtd)vD02vi1lzs5mHg((");
+            HttpGet request = new HttpGet("https://api.stackexchange.com/2.2/questions?page=" + page + "&pagesize=100&order=desc&sort=activity&tagged=" + URLEncoder.encode(tags, "UTF-8") + "&site=" + site + "&filter=!--1nZwT3Ejsm&key=IT8vJtd)vD02vi1lzs5mHg((");
 
             try {
                 HttpResponse response = client.execute(request);
@@ -1077,17 +1054,7 @@ public class StackExchangeAPI {
                     for (int i = 0; i < tokenList.length(); i++) {
                         JSONObject oj = tokenList.getJSONObject(i);
 
-                        boolean security = false;
-
-                        JSONArray tags = oj.getJSONArray("tags");
-                        for (int t = 0; t < tags.length(); t++) {
-                            if (tags.get(t).toString().contains("security")) {
-                                security = true;
-                                break;
-                            }
-                        }
-
-                        if (security && SRs < numSRs) {
+                        if (SRs < numSRs) {
                             String title = oj.getString("title");
                             title = title.replace(";", "");
 
@@ -1119,12 +1086,12 @@ public class StackExchangeAPI {
                                 }
                             }
 
-                            double score = getWord2VecScore(cleanText, benchmarkSentences, input_vectors, model, w, numFeatures);
+                            double score = getWord2VecScore(cleanText, benchmarkSentences, input_vectors, model, w, numFeatures, threshold);
 
                             if (score >= threshold) {
                                 if (!postAnswers.isEmpty() && getAnswersWithThreshold) {
                                     for (int p = 0; p < postAnswers.size(); p++) {
-                                        double answerScore = getWord2VecScore(postAnswers.get(p), benchmarkSentences, input_vectors, model, w, numFeatures);
+                                        double answerScore = getWord2VecScore(postAnswers.get(p), benchmarkSentences, input_vectors, model, w, numFeatures, threshold);
 
                                         if (answerScore >= threshold) {
                                             cleanText = cleanText + " " + postAnswers.get(p);
@@ -1152,7 +1119,6 @@ public class StackExchangeAPI {
             }
             if (hasMore) {
                 page++;
-                Thread.sleep(500);
             } else {
                 break;
             }
@@ -1279,16 +1245,16 @@ public class StackExchangeAPI {
                                 }
                             }
 
-                            double tfidf = getTFIDFScore(cleanText, features, docsArray, tfidfDocsVector, d);
+                            double tfidf = getTFIDFScore(cleanText, features, docsArray, tfidfDocsVector, d, threshold);
 
-                            double w2v = getWord2VecScore(cleanText, benchmarkSentences, input_vectors, model, w, numFeatures);
+                            double w2v = getWord2VecScore(cleanText, benchmarkSentences, input_vectors, model, w, numFeatures, threshold);
 
                             double score = (tfidf + w2v) / 2;
 
                             if (tfidf >= threshold && SRsTfidf < numSRs) {
                                 if (!postAnswers.isEmpty() && getAnswersWithThreshold) {
                                     for (int p = 0; p < postAnswers.size(); p++) {
-                                        double answerScore = getTFIDFScore(postAnswers.get(p), features, docsArray, tfidfDocsVector, d);
+                                        double answerScore = getTFIDFScore(postAnswers.get(p), features, docsArray, tfidfDocsVector, d, threshold);
 
                                         if (answerScore >= threshold) {
                                             cleanText = cleanText + " " + postAnswers.get(p);
@@ -1308,7 +1274,7 @@ public class StackExchangeAPI {
                             if (w2v >= threshold && SRsWord2Vec < numSRs) {
                                 if (!postAnswers.isEmpty() && getAnswersWithThreshold) {
                                     for (int p = 0; p < postAnswers.size(); p++) {
-                                        double answerScore = getWord2VecScore(postAnswers.get(p), benchmarkSentences, input_vectors, model, w, numFeatures);
+                                        double answerScore = getWord2VecScore(postAnswers.get(p), benchmarkSentences, input_vectors, model, w, numFeatures, threshold);
 
                                         if (answerScore >= threshold) {
                                             cleanText = cleanText + " " + postAnswers.get(p);
@@ -1328,8 +1294,8 @@ public class StackExchangeAPI {
                             if (score >= threshold && SRs < numSRs) {
                                 if (!postAnswers.isEmpty() && getAnswersWithThreshold) {
                                     for (int p = 0; p < postAnswers.size(); p++) {
-                                        double tfidfAnswer = getTFIDFScore(postAnswers.get(p), features, docsArray, tfidfDocsVector, d);
-                                        double w2vAnswer = getWord2VecScore(postAnswers.get(p), benchmarkSentences, input_vectors, model, w, numFeatures);
+                                        double tfidfAnswer = getTFIDFScore(postAnswers.get(p), features, docsArray, tfidfDocsVector, d, threshold);
+                                        double w2vAnswer = getWord2VecScore(postAnswers.get(p), benchmarkSentences, input_vectors, model, w, numFeatures, threshold);
 
                                         double answerScore = (tfidfAnswer + w2vAnswer) / 2;
                                         if (answerScore >= threshold) {
@@ -1368,7 +1334,7 @@ public class StackExchangeAPI {
         System.out.println("done!");
     }
 
-    private static double getTFIDFScore(String cleanText, List<String> features, List<String[]> docsArray, List<double[]> tfidfDocsVector, TFIDFSimilarity d) {
+    private static double getTFIDFScore(String cleanText, List<String> features, List<String[]> docsArray, List<double[]> tfidfDocsVector, TFIDFSimilarity d, double threshold) {
         // check cosine similarity
         double[] cleanTextDoc = d.getDocumentVectors(cleanText, features, docsArray);
 
@@ -1381,14 +1347,14 @@ public class StackExchangeAPI {
                 score = cosine;
             }
 
-            if (score >= 0.7) {
+            if (score >= threshold) {
                 break;
             }
         }
         return score;
     }
 
-    private static double getWord2VecScore(String cleanText, List<Collection<String>> benchmarkSentences, List<INDArray> input_vectors, Word2Vec model, Word2VecSimilarity w, int num_features) {
+    private static double getWord2VecScore(String cleanText, List<Collection<String>> benchmarkSentences, List<INDArray> input_vectors, Word2Vec model, Word2VecSimilarity w, int num_features, double threshold) {
         Collection<String> sentence = new Cleanup().normalizeText(cleanText);
 
         double score = 0.0;
@@ -1405,7 +1371,7 @@ public class StackExchangeAPI {
                 score = cosine;
             }
 
-            if (score >= 0.7) {
+            if (score >= threshold) {
                 break;
             }
         }
