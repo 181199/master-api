@@ -1,10 +1,12 @@
 package similarity;
 
+import machinelearning.utils.Cleanup;
 import org.deeplearning4j.models.embeddings.loader.WordVectorSerializer;
 import org.deeplearning4j.models.word2vec.Word2Vec;
 import org.deeplearning4j.text.stopwords.StopWords;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
+import org.nd4j.shade.guava.collect.Iterables;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,13 +18,14 @@ import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-public class Word2VecCalculator {
+public class Word2VecSimilarity {
 
-    private static Logger logger = LoggerFactory.getLogger(Word2VecCalculator.class);
+    private static Logger logger = LoggerFactory.getLogger(Word2VecSimilarity.class);
+    private static StringBuilder builder;
 
     public static void main(String[] args) throws Exception {
 
-        Word2Vec word2vec = getWord2Vec("/Users/anja/Desktop/master/api/files/word2vec_model.txt");
+        Word2Vec word2vec = getWord2Vec("/Users/anja/Desktop/master/api/files/features/cve_word2vec_model.txt");
 
 //        List<Collection<String>> cveSentences = new ArrayList<>();
 //        getSentences("/Users/anja/Desktop/master/api/files/testing/cveData_small.csv", cveSentences);
@@ -32,17 +35,17 @@ public class Word2VecCalculator {
 //
 //        getCosineSimilarity(cveSentences, bugSentences, word2vec);
 
-        writeWord2Vectors("/Users/anja/Desktop/master/api/dataset/odcv.csv", "/Users/anja/Desktop/master/api/dataset/odcv_word2vec.csv", word2vec);
+        //writeWord2Vectors("/Users/anja/Desktop/master/api/dataset/chromium_test_mod.csv", "/Users/anja/Desktop/master/api/files/validationWord2Vec/chromium_word2vec_cve.csv", word2vec);
     }
 
-    public static void getCosineSimilarity(List<Collection<String>> cve, List<Collection<String>> bugs, Word2Vec word2vec) throws IOException {
+    public static void getCosineSimilarity(List<Collection<String>> cve, List<Collection<String>> bugs, Word2Vec word2vec, int vector_length) throws IOException {
         List<Double> scores = new ArrayList<Double>();
         double score = 0.0;
         double cosine_sim = 0.0;
         for(int i = 0; i < cve.size(); i++){
             for(int j = 0; j < bugs.size(); j++){
-                INDArray input1_vector = getVector(cve.get(i), word2vec);
-                INDArray input2_vector = getVector(bugs.get(j), word2vec);
+                INDArray input1_vector = getVector(cve.get(i), word2vec, vector_length);
+                INDArray input2_vector = getVector(bugs.get(j), word2vec, vector_length);
 
                 double dot_product = Nd4j.getBlasWrapper().dot(input1_vector, input2_vector);
 
@@ -65,12 +68,12 @@ public class Word2VecCalculator {
         try (BufferedReader br = new BufferedReader(new FileReader(file))) {
             String line = "";
             int i = 0;
-            while ((line = br.readLine()) != null && i <= 100) {
+            while ((line = br.readLine()) != null) {
                 String[] cols = line.split(";");
-                String cleaned = cleanText(cols[1]);
+                String cleaned = new Cleanup().cleanText(cols[1]);
 
                 if(i != 0) {
-                    Collection<String> labels = normalizeText(cleaned);
+                    Collection<String> labels = new Cleanup().normalizeText(cleaned);
                     sentences.add(labels);
                 }
                 i++;
@@ -86,7 +89,7 @@ public class Word2VecCalculator {
         return word2vec;
     }
 
-    public static void writeWord2Vectors(String infile, String outfile, Word2Vec word2vec) {
+    public static void writeWord2Vectors(String infile, String outfile, Word2Vec word2vec, int vector_length) {
 
         try(BufferedWriter bw = new BufferedWriter(new FileWriter(outfile))){
 
@@ -96,8 +99,8 @@ public class Word2VecCalculator {
                 while((line=br.readLine())!=null) {
 
                     String[] toks = line.split(";");
-                    Collection<String> tokens = normalizeText(toks[1] + " " + toks[2]);
-                    INDArray invector = getVector(tokens, word2vec);
+                    Collection<String> tokens = new Cleanup().normalizeText(toks[1] + " " + toks[2]);
+                    INDArray invector = getVector(tokens, word2vec, vector_length);
 
                     String rowvecpluslabel = getWordVectorsAndLabel(invector, index);
                     rowvecpluslabel = rowvecpluslabel+toks[0]; 		// append the label at the end
@@ -128,35 +131,8 @@ public class Word2VecCalculator {
 
     }
 
-    public static Collection<String> normalizeText(String text){
-        Pattern charsPunctuationPattern = Pattern.compile("[\\d:,\"\'\\`\\_\\|?!\n\r@;]+");
-        String input_text = charsPunctuationPattern.matcher(text.trim().toLowerCase()).replaceAll("");
-        input_text = input_text.replaceAll("\\{.*?\\}", "");
-        input_text = input_text.replaceAll("\\[.*?\\]", "");
-        input_text = input_text.replaceAll("\\(.*?\\)", "");
-        input_text = input_text.replaceAll("[^A-Za-z0-9(),!?@\'\\`\"\\_\n]", " ");
-        input_text = input_text.replaceAll("[/]"," ");
-        input_text = input_text.replaceAll(";"," ");
-        Collection<String> labels = Arrays.asList(input_text.split(" ")).parallelStream().filter(label->label.length()>0).collect(Collectors.toList());
-        labels = labels.parallelStream().filter(label ->  !StopWords.getStopWords().contains(label.trim())).collect(Collectors.toList());
-        return labels;
-    }
-
-    // use the same text cleaning function as above for creating our word2vec dataset for the NN
-    public static String cleanText(String text){
-        Pattern charsPunctuationPattern = Pattern.compile("[\\d:,\"\'\\`\\_\\|?!\n\r@;]+");
-        String input_text = charsPunctuationPattern.matcher(text.trim().toLowerCase()).replaceAll("");
-        input_text = input_text.replaceAll("\\{.*?\\}", "");
-        input_text = input_text.replaceAll("\\[.*?\\]", "");
-        input_text = input_text.replaceAll("\\(.*?\\)", "");
-        input_text = input_text.replaceAll("[^A-Za-z0-9(),!?@\'\\`\"\\_\n]", " ");
-        input_text = input_text.replaceAll("[/]"," ");
-
-        return input_text;
-    }
-
-    public static INDArray getVector(Collection<String> labels, Word2Vec word2Vec){
-        double sentence_vector[] = new double[100];
+    public static INDArray getVector(Collection<String> labels, Word2Vec word2Vec, int vector_length){
+        double sentence_vector[] = new double[vector_length];
         // initializing the vector
         Arrays.fill(sentence_vector,0d);
         int i=0;
