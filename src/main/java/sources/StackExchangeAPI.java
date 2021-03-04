@@ -1197,6 +1197,7 @@ public class StackExchangeAPI {
 
         List<String[]> docsArray = d.getDocsArrayFromCsv(benchmarkDataset);
         List<double[]> tfidfDocsVector = d.getTFIDFVectorsFromFile(tfidfVectorsFile, numFeatures);
+        //List<double[]> tfidfDocsVector = d.tfIdfCalculator(docsArray, docsArray, features);
 
         Word2VecSimilarity w = new Word2VecSimilarity();
 
@@ -1212,6 +1213,8 @@ public class StackExchangeAPI {
 
         Boolean hasMore = true;
         int page = 1;
+        int SRsTfidf = 0;
+        int SRsWord2Vec = 0;
         int SRs = 0;
         while (SRs < numSRs) {
             HttpClient client = HttpClientBuilder.create()
@@ -1282,7 +1285,7 @@ public class StackExchangeAPI {
 
                             double score = (tfidf + w2v) / 2;
 
-                            if (tfidf >= threshold) {
+                            if (tfidf >= threshold && SRsTfidf < numSRs) {
                                 if (!postAnswers.isEmpty() && getAnswersWithThreshold) {
                                     for (int p = 0; p < postAnswers.size(); p++) {
                                         double answerScore = getTFIDFScore(postAnswers.get(p), features, docsArray, tfidfDocsVector, d);
@@ -1298,9 +1301,11 @@ public class StackExchangeAPI {
                                 builder.append(id + ";");
                                 builder.append(newTime);
                                 builder.append('\n');
+
+                                SRsTfidf++;
                             }
 
-                            if (w2v >= threshold) {
+                            if (w2v >= threshold && SRsWord2Vec < numSRs) {
                                 if (!postAnswers.isEmpty() && getAnswersWithThreshold) {
                                     for (int p = 0; p < postAnswers.size(); p++) {
                                         double answerScore = getWord2VecScore(postAnswers.get(p), benchmarkSentences, input_vectors, model, w, numFeatures);
@@ -1316,6 +1321,8 @@ public class StackExchangeAPI {
                                 builder1.append(id + ";");
                                 builder1.append(newTime);
                                 builder1.append('\n');
+
+                                SRsWord2Vec++;
                             }
 
                             if (score >= threshold && SRs < numSRs) {
@@ -1348,7 +1355,6 @@ public class StackExchangeAPI {
             }
             if (hasMore) {
                 page++;
-                Thread.sleep(500);
             } else {
                 break;
             }
