@@ -57,9 +57,9 @@ public class TFIDFSimilarity {
 
         try (BufferedReader br = new BufferedReader(new FileReader(file))) {
 
-            double[] vector = new double[num_features];
             String line = "";
             while ((line = br.readLine()) != null) {
+                double[] vector = new double[num_features];
 
                 String[] scores = line.split("\\s+");
                 for(int i = 0; i < num_features; i++){
