@@ -1,18 +1,22 @@
 package similarity;
 
+import machinelearning.utils.Cleanup;
+
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 
 
-public class Documents {
+public class TFIDFSimilarity {
+
+    private static StringBuilder builder;
 
     // Method to read files and store in array.
 
     public List<String[]> getDocsArrayFromCsv(String filePath) throws IOException {
 
-        List<String[]> cveDocsArray = new ArrayList<String[]>();
+        List<String[]> docsArray = new ArrayList<String[]>();
 
         try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
 
@@ -20,31 +24,51 @@ public class Documents {
             int i = 0;
             while ((line = br.readLine()) != null) {
                 String[] cols = line.split(";");
-                String cleaned = cleanText(cols[1]);
+                String cleaned = new Cleanup().cleanText(cols[1]);
 
                 if(i != 0) {
                     String[] tokenizedTerms = cleaned.replaceAll("[\\W&&[^\\s]]", "").split("\\W+");
-                    cveDocsArray.add(tokenizedTerms);
+                    docsArray.add(tokenizedTerms);
                 }
                 i++;
             }
         }
-        return cveDocsArray;
+        return docsArray;
     }
 
-    public List<String> getTermsFromFile(String filePath) throws IOException {
+    public List<String> getTermsFromFile(String filePath, int num_features) throws IOException {
 
         List<String> allTerms = new ArrayList<String>();
 
         try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
 
+            int i = 0;
             String line = "";
-            while ((line = br.readLine()) != null) {
+            while ((line = br.readLine()) != null && i < num_features) {
                 allTerms.add(line);
-                //System.out.println(line);
+                i++;
             }
         }
         return allTerms;
+    }
+
+    public List<double[]> getTFIDFVectorsFromFile(String file, int num_features) throws IOException {
+        List<double[]> vectors = new ArrayList<>();
+
+        try (BufferedReader br = new BufferedReader(new FileReader(file))) {
+
+            double[] vector = new double[num_features];
+            String line = "";
+            while ((line = br.readLine()) != null) {
+
+                String[] scores = line.split("\\s+");
+                for(int i = 0; i < num_features; i++){
+                    vector[i] = Double.parseDouble(scores[i]);
+                }
+                vectors.add(vector);
+            }
+        }
+        return vectors;
     }
 
     public void printTerms(List<String> terms){
@@ -79,6 +103,38 @@ public class Documents {
             tfidfDocsVector.add(tfidfvectors);  //storing document vectors;
         }
         return tfidfDocsVector;
+    }
+
+    public void tfIdfCalculatorToFile(String newFile, List<String[]> docsArray, List<String[]> benchmarkDocsArray, List<String> allTerms) {
+
+        PrintWriter pw = null;
+        try {
+            pw = new PrintWriter(new File(newFile));
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+        builder = new StringBuilder();
+
+        double tf; //term frequency
+        double idf; //inverse document frequency
+        double tfidf; //term frequency inverse document frequency
+        for (String[] docTermsArray : docsArray) {
+            double[] tfidfvectors = new double[allTerms.size()];
+            int count = 0;
+            for (String terms : allTerms) {
+                //System.out.println(terms);
+                tf = new TFIDFCalculator().tf(docTermsArray, terms);
+                idf = new TFIDFCalculator().idf(benchmarkDocsArray, terms);
+                if(Double.isInfinite(idf)){
+                    idf = 0.0;
+                }
+                tfidf = tf * idf;
+                builder.append(tfidf + " ");
+            }
+            builder.append("\n");
+        }
+        pw.write(builder.toString());
+        pw.close();
     }
 
     public List<double[]> ntfIdfCalculator(List<String[]> docsArray, List<String[]> benchmarkDocsArray, List<String> allTerms) {
@@ -204,17 +260,5 @@ public class Documents {
             if (bw != null)
                 bw.close();
         }
-    }
-
-    public static String cleanText(String text) {
-        Pattern charsPunctuationPattern = Pattern.compile("[\\d:,\"\'\\`\\_\\|?!\n\r@;]+");
-        String input_text = charsPunctuationPattern.matcher(text.trim().toLowerCase()).replaceAll("");
-        input_text = input_text.replaceAll("\\{.*?\\}", "");
-        input_text = input_text.replaceAll("\\[.*?\\]", "");
-        input_text = input_text.replaceAll("\\(.*?\\)", "");
-        input_text = input_text.replaceAll("[^A-Za-z0-9(),!?@\'\\`\"\\_\n]", " ");
-        input_text = input_text.replaceAll("[/]", " ");
-
-        return input_text;
     }
 }

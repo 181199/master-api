@@ -1,33 +1,37 @@
 package similarity;
 
+import org.deeplearning4j.models.word2vec.Word2Vec;
+import org.nd4j.linalg.api.ndarray.INDArray;
+import sources.StackExchangeAPI;
+
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
-public class SimilarityCalculator {
+public class Main {
 
-    public static void main(String args[]) throws FileNotFoundException, IOException, IOException {
-        String path = "/Users/anja/Desktop/master/api/files/testing/";
+    public static void main(String args[]) throws FileNotFoundException, IOException, IOException, NoSuchMethodException, IllegalAccessException, InvocationTargetException, InterruptedException {
+        SimilarityScore s = new SimilarityScore();
+        TFIDFSimilarity d = new TFIDFSimilarity();
+        StackExchangeAPI sapi = new StackExchangeAPI();
+        String dataset = "/Users/anja/Desktop/master/api/files/sources/";
+        String terms = "/Users/anja/Desktop/master/api/files/features/";
+        String word2vec = "/Users/anja/Desktop/master/api/files/features/";
+        String tags = "security";
+        String site = "stackoverflow";
+        int num_features = 100;
 
-        Documents d = new Documents();
-        List<String[]> cveDocsArray = d.getDocsArrayFromCsv(path + "cveData_small.csv");
-        List<String[]> bugsDocsArray = d.getDocsArrayFromCsv(path + "stackoverflowSR_small.csv");
+        List<String[]> benchmarkDocsArray = d.getDocsArrayFromCsv(dataset + "cve.csv");
+        List<String> features = d.getTermsFromFile(terms + "CVEFeaturesTFIDF500.txt", num_features);
 
-        List<String> terms = d.getTermsFromFile("/Users/anja/Desktop/master/api/files/FeaturesTFIDF.txt");
-        //d.printTerms(terms);
+        //d.tfIdfCalculatorToFile("./files/features/cve_tfidf_vectors.txt", benchmarkDocsArray, benchmarkDocsArray, features);
 
-        List<double[]> tfidfDocsVectorCve = d.tfIdfCalculator(cveDocsArray, cveDocsArray, terms); //calculates tfidf
-        List<double[]> tfidfDocsVectorBugs = d.tfIdfCalculator(bugsDocsArray, cveDocsArray, terms);
+        List<double[]> tfidfDocsVector = d.getTFIDFVectorsFromFile("./files/features/cve_tfidf_vectors.txt", num_features);
 
-        d.getCosineSimilarity(tfidfDocsVectorBugs, tfidfDocsVectorCve); //calculates cosine similarity
+        sapi.allMethods("./files/experiments/tfidf/SO_CVE/SO_QA_CVE_TFIDF_SR_" + num_features + ".csv","./files/experiments/word2vec/SO_CVE/SO_QA_CVE_Word2Vec_SR_" + num_features + ".csv", "./files/experiments/tfidfword2vec/SO_CVE/SO_QA_CVE_TFIDFWord2Vec_SR_" + num_features + ".csv", dataset + "cve.csv", terms + "CVEFeaturesTFIDF500.txt", "./files/features/cve_tfidf_vectors.txt",word2vec + "cve_word2vec_model.txt", site, tags, 0.7, 1000, num_features, true, true);
 
-        //d.printDocumentVectors("In getProcessRecordLocked of ActivityManagerService.java isolated apps are not handled correctly. This could lead to local escalation of privilege with no additional execution privileges needed. User interaction is not needed for exploitation. Product: Android Versions: Android-8.0, Android-8.1, Android-9, and Android-10 Android ID: A-140055304", terms, cveDocsArray);
-
-        //double[] document1 = d.getDocumentVectors("In getProcessRecordLocked of ActivityManagerService.java isolated apps are not handled correctly. This could lead to local escalation of privilege with no additional execution privileges needed. User interaction is not needed for exploitation. Product: Android Versions: Android-8.0, Android-8.1, Android-9, and Android-10 Android ID: A-140055304", terms, cveDocsArray);
-        //double[] document2 = d.getDocumentVectors("The idea is to encrypt a string containing session data (username and token expiry) and store it in a cookie. Whenever an HTTP request comes through the client, it checks if it can decrypt the token in the cookie and then queries the DB to check if the username exists and is allowed to access the target resource and if it has not yet expired: // create token    $token = openssl_encrypt($username . \"::\" . $expiry,  \"rc2-40-cbc\", $key, 0, \"00000000\")// then store in cookie The '::' is just a delimiter to separate the username and expiry. // on http request, verify token    $decryptedToken = openssl_decrypt($token,  \"rc2-40-cbc\", $key, 0, \"00000000\")    if($decryptedToken != false) // token is valid    // extract data    $tokenValues = explode(\"::\", $token)    $username = $tokenValues[0]    $tokenExpiry = $tokenValues[1]    // then validate username and expiry Is this safe?", terms, cveDocsArray);
-
-        //double[] document2 = d.getDocumentVectors("In getProcessRecordLocked of ActivityManagerService.java isolated apps are not handled correctly. This could lead to local escalation of privilege with no additional execution privileges needed. User interaction is not needed for exploitation. Product: Android Versions: Android-8.0, Android-8.1, Android-9, and Android-10 Android ID: A-140055304", terms, cveDocsArray);
-
-        //d.getCosineSimilarityTwoDocuments(document1, document2);
     }
 }

@@ -1,5 +1,6 @@
 package similarity;
 
+import machinelearning.utils.Cleanup;
 import org.deeplearning4j.models.word2vec.Word2Vec;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
@@ -18,13 +19,15 @@ public class SimilarityScore {
     public static void main(String args[]) throws FileNotFoundException, IOException, IOException, NoSuchMethodException, IllegalAccessException, InvocationTargetException {
         String path = "/Users/anja/Desktop/master/api/files/test/";
         //createDatasetFromScores(path + "stackoverflowNSR_small_tfidf_word2vec.csv",
-        //        path + "stackoverflowNSR_new.csv", true, true, false);
+        //        path + "stackoverflowNSR.csv", true, true, false);
 
         String benchmark = path + "cveData_100.csv";
         String docs = path + "stackoverflowSR_100.csv";
         //String docs2 = path + "stackoverflowNSR_small.csv";
-        String features = "/Users/anja/Desktop/master/api/files/FeaturesTFIDF.txt";
-        String word2vec = "/Users/anja/Desktop/master/api/files/word2vec_model.txt";
+        String features = "/Users/anja/Desktop/master/api/files/features/CVEFeaturesTFIDF.txt";
+        String word2vec = "/Users/anja/Desktop/master/api/files/cve_word2vec_model.txt";
+
+        listMostSimilarSourceForBRsTFIDF("./files/sources/cve.csv", "./files/experiments/tfidf/stackoverflow_CVE/stackoverflow_SR.csv", features);
 
         //listMostSimilarWord2VecCve("/Users/anja/Desktop/master/api/files/test/cveData.csv", "/Users/anja/Desktop/master/api/files/test/stackoverflowSBR_small.csv", word2vec);
 
@@ -36,7 +39,7 @@ public class SimilarityScore {
         //listMostSimilarAndSuggestTagsTFIDF(benchmark, docs, features);
         //listMostSimilarAndSuggestTagsWord2Vec(benchmark, docs, word2vec);
         //listMostSimilarSourceForBRsTFIDF(benchmark, docs, features);
-        listMostSimilarSourceForBRsWord2Vec(benchmark, docs, word2vec);
+//        listMostSimilarSourceForBRsWord2Vec(benchmark, docs, word2vec);
 //
 //        String newFilePath = path + "stackoverflowSR_new_similarity.csv";
 //        createDatasetFromCVESimilarity(docs, newFilePath, documentsToKeep);
@@ -55,13 +58,13 @@ public class SimilarityScore {
 
     // prints the most similar bug report for each report in benchmark dataset using TFIDF and cosine similarity and prints suggested tags
     public static void listMostSimilarAndSuggestTagsTFIDF(String benchmarkDataset, String file, String features) throws IOException {
-        Documents d = new Documents();
+        TFIDFSimilarity d = new TFIDFSimilarity();
 
         List<String> benchmarkIds = getIds(benchmarkDataset, 0);
         List<String> bugIds = getIds(file, 2);
 
         List<String[]> cveDocsArray = d.getDocsArrayFromCsv(benchmarkDataset);
-        List<String> terms = d.getTermsFromFile(features);
+        List<String> terms = d.getTermsFromFile(features, 200);
         List<double[]> tfidfDocsVectorCve = d.tfIdfCalculator(cveDocsArray, cveDocsArray, terms);
         List<String> documents = new ArrayList<>();
 
@@ -72,7 +75,7 @@ public class SimilarityScore {
             while ((line = br.readLine()) != null) {
                 if(i != 0) {
                     String[] cols = line.split(";");
-                    String cleaned = d.cleanText(cols[1]);
+                    String cleaned = new Cleanup().cleanText(cols[1]);
                     documents.add(cleaned);
                 }
                 i++;
@@ -104,13 +107,13 @@ public class SimilarityScore {
 
     // prints the most similar report from benchmark dataset for each bug report using TFIDF and cosine similarity and prints suggested tags
     public static void listMostSimilarSourceForBRsTFIDF(String benchmarkDataset, String file, String features) throws IOException {
-        Documents d = new Documents();
+        TFIDFSimilarity d = new TFIDFSimilarity();
 
         List<String> benchmarkIds = getIds(benchmarkDataset, 0);
         List<String> bugIds = getIds(file, 2);
 
         List<String[]> cveDocsArray = d.getDocsArrayFromCsv(benchmarkDataset);
-        List<String> terms = d.getTermsFromFile(features);
+        List<String> terms = d.getTermsFromFile(features, 200);
         List<double[]> tfidfDocsVectorCve = d.tfIdfCalculator(cveDocsArray, cveDocsArray, terms);
         List<String> documents = new ArrayList<>();
 
@@ -118,10 +121,10 @@ public class SimilarityScore {
 
             String line = "";
             int i = 0;
-            while ((line = br.readLine()) != null && i <= 100) {
+            while ((line = br.readLine()) != null) {
                 if(i != 0) {
                     String[] cols = line.split(";");
-                    String cleaned = d.cleanText(cols[1]);
+                    String cleaned = new Cleanup().cleanText(cols[1]);
                     documents.add(cleaned);
                 }
                 i++;
@@ -151,8 +154,8 @@ public class SimilarityScore {
     }
 
     // prints the most similar bug report for each report in benchmark dataset using Word2Vec and cosine similarity and prints suggested tags
-    public static void listMostSimilarAndSuggestTagsWord2Vec(String benchmarkDataset, String file, String word2vec) throws IOException, NoSuchMethodException, IllegalAccessException, InvocationTargetException {
-        Word2VecCalculator w = new Word2VecCalculator();
+    public static void listMostSimilarAndSuggestTagsWord2Vec(String benchmarkDataset, String file, String word2vec, int numFeatures) throws IOException, NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+        Word2VecSimilarity w = new Word2VecSimilarity();
 
         Word2Vec model = w.getWord2Vec(word2vec);
 
@@ -170,8 +173,8 @@ public class SimilarityScore {
         int n = 0;
         for(int i = 0; i < benchmarkSentences.size(); i++) {
             for (int j = 0; j < bugSentences.size(); j++) {
-                INDArray input1_vector = w.getVector(benchmarkSentences.get(i), model);
-                INDArray input2_vector = w.getVector(bugSentences.get(j), model);
+                INDArray input1_vector = w.getVector(benchmarkSentences.get(i), model, numFeatures);
+                INDArray input2_vector = w.getVector(bugSentences.get(j), model, numFeatures);
 
                 double dot_product = Nd4j.getBlasWrapper().dot(input1_vector, input2_vector);
 
@@ -195,8 +198,8 @@ public class SimilarityScore {
     }
 
     // prints the most similar report from benchmark dataset for each  bug report using Word2Vec and cosine similarity and prints suggested tags
-    public static void listMostSimilarSourceForBRsWord2Vec(String benchmarkDataset, String file, String word2vec) throws IOException, NoSuchMethodException, IllegalAccessException, InvocationTargetException {
-        Word2VecCalculator w = new Word2VecCalculator();
+    public static void listMostSimilarSourceForBRsWord2Vec(String benchmarkDataset, String file, String word2vec, int numFeatures) throws IOException, NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+        Word2VecSimilarity w = new Word2VecSimilarity();
 
         Word2Vec model = w.getWord2Vec(word2vec);
 
@@ -214,8 +217,8 @@ public class SimilarityScore {
         int n = 0;
         for(int i = 0; i < bugSentences.size(); i++) {
             for (int j = 0; j < benchmarkSentences.size(); j++) {
-                INDArray input1_vector = w.getVector(benchmarkSentences.get(j), model);
-                INDArray input2_vector = w.getVector(bugSentences.get(i), model);
+                INDArray input1_vector = w.getVector(benchmarkSentences.get(j), model, numFeatures);
+                INDArray input2_vector = w.getVector(bugSentences.get(i), model, numFeatures);
 
                 double dot_product = Nd4j.getBlasWrapper().dot(input1_vector, input2_vector);
 
@@ -294,7 +297,7 @@ public class SimilarityScore {
     }
 
     // creates new dataset from scores TFIDF and Word2Vec scores saved in dataset file
-    public static void createDatasetFromScores(String filePath, String newFilePath, boolean tfidf, boolean word2vec, boolean security) throws IOException {
+    public static void createDatasetFromScores(String filePath, String newFilePath, boolean tfidf, boolean word2vec, boolean security, double threshold) throws IOException {
         File file = new File(newFilePath);
 
         BufferedReader br = null;
@@ -304,8 +307,6 @@ public class SimilarityScore {
         if(security){
             sec = 1;
         }
-
-        double threshold = 0.6;
 
         try {
             br = new BufferedReader(new FileReader(filePath));

@@ -48,7 +48,7 @@ public class FeaturesTFIDF {
         return features;
     }
 
-    public void readData(String file, List<String> unwanted, boolean onlysecurityterms) throws IOException {
+    public void readData(String file, boolean onlysecurityterms) throws IOException {
 
         documents = new ArrayList<String>();
         BufferedReader br = new BufferedReader(new FileReader(file));
@@ -60,13 +60,6 @@ public class FeaturesTFIDF {
             if (i == 0) continue;
 
             line = line.toLowerCase().trim();
-
-            if (unwanted != null) {
-                for (String u : unwanted) {
-                    //System.out.println(u);
-                    line = line.replace(u.trim(), " ");
-                }
-            }
 
             if (onlysecurityterms) {
                 String[] cols = line.split(";"); // this is separated by semicolon
@@ -239,35 +232,28 @@ public class FeaturesTFIDF {
      */
     public static void main(String[] args) throws Exception {
 
-        String datafile = "/Users/anja/Desktop/master/api/files/cveData.csv";
+        String datafile = "/Users/anja/Desktop/master/api/files/sources/cve.csv";
         String stopfile = "/Users/anja/Desktop/master/api/files/stopwords.txt";
-        String unwantfile = "/Users/anja/Desktop/master/api/files/unwanted.txt";
-        String dictfile = "/Users/anja/Desktop/master/api/files/FeaturesTFIDF.txt";
+        String dictfile = "/Users/anja/Desktop/master/api/files/features/CVEFeaturesTFIDF500.txt";
 
         FeaturesTFIDF tfidf = new FeaturesTFIDF();
 
         List<String> stops = tfidf.readStopwords(stopfile);
-        List<String> unwanted = null;
-        try {
-            unwanted = tfidf.readStopwords(unwantfile);
-        }catch(FileNotFoundException e) {
-
-        }
-        tfidf.readData(datafile, unwanted, true);
+        tfidf.readData(datafile, true);
         tfidf.tokenize(stops);
 
         tfidf.computeAggregateTFIDF();
 
-        List<String> features100 = tfidf.getFeatures(200);
+        List<String> features = tfidf.getFeatures(500);
 
         PrintWriter pw = new PrintWriter(dictfile);
-        for(int i = 0; i < features100.size(); i++){
-            pw.append(features100.get(i) + "\n");
+        for(int i = 0; i < features.size(); i++){
+            pw.append(features.get(i) + "\n");
         }
         pw.close();
-        System.out.println(features100.size());
+        System.out.println(features.size());
 
-        System.out.println(features100);
+        System.out.println(features);
 
     }
 }
