@@ -1182,7 +1182,7 @@ public class StackExchangeAPI {
         int SRsTfidf = 0;
         int SRsWord2Vec = 0;
         int SRs = 0;
-        while (SRs < numSRs) {
+        while (SRs < numSRs && SRsTfidf < numSRs && SRsWord2Vec < numSRs) {
             HttpClient client = HttpClientBuilder.create()
                     .setDefaultRequestConfig(RequestConfig.custom()
                             .setCookieSpec(CookieSpecs.STANDARD).build())
