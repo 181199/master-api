@@ -1181,8 +1181,9 @@ public class StackExchangeAPI {
         int page = 1;
         int SRsTfidf = 0;
         int SRsWord2Vec = 0;
+        int SRsBoth = 0;
         int SRs = 0;
-        while (SRs < numSRs && SRsTfidf < numSRs && SRsWord2Vec < numSRs) {
+        while (SRs < numSRs) {
             HttpClient client = HttpClientBuilder.create()
                     .setDefaultRequestConfig(RequestConfig.custom()
                             .setCookieSpec(CookieSpecs.STANDARD).build())
@@ -1291,7 +1292,7 @@ public class StackExchangeAPI {
                                 SRsWord2Vec++;
                             }
 
-                            if (score >= threshold && SRs < numSRs) {
+                            if (score >= threshold && SRsBoth < numSRs) {
                                 if (!postAnswers.isEmpty() && getAnswersWithThreshold) {
                                     for (int p = 0; p < postAnswers.size(); p++) {
                                         double tfidfAnswer = getTFIDFScore(postAnswers.get(p), features, docsArray, tfidfDocsVector, d, threshold);
@@ -1310,8 +1311,11 @@ public class StackExchangeAPI {
                                 builder2.append(newTime);
                                 builder2.append('\n');
 
-                                SRs++;
-                                System.out.println(SRs);
+                                SRsBoth++;
+                            }
+
+                            if(SRsTfidf == numSRs && SRsWord2Vec == numSRs && SRsBoth == numSRs){
+                                SRs = numSRs;
                             }
                         }
                     }
