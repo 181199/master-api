@@ -36,7 +36,7 @@ public class TFIDFSimilarity {
         return docsArray;
     }
 
-    public List<String> getTermsFromFile(String filePath, int num_features) throws IOException {
+    public List<String> getTermsFromFile(String filePath) throws IOException {
 
         List<String> allTerms = new ArrayList<String>();
 
@@ -44,7 +44,23 @@ public class TFIDFSimilarity {
 
             int i = 0;
             String line = "";
-            while ((line = br.readLine()) != null && i < num_features) {
+            while ((line = br.readLine()) != null) {
+                allTerms.add(line);
+                i++;
+            }
+        }
+        return allTerms;
+    }
+
+    public List<String> getNumTermsFromFile(String filePath, int numFeatures) throws IOException {
+
+        List<String> allTerms = new ArrayList<String>();
+
+        try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
+
+            int i = 0;
+            String line = "";
+            while ((line = br.readLine()) != null && i < numFeatures) {
                 allTerms.add(line);
                 i++;
             }
