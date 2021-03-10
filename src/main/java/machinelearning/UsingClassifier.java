@@ -8,7 +8,8 @@ public class UsingClassifier {
         String path1 = "./files/testing/";
         String path2 = "./files/validation/";
         String path3 = "./files/experiments/tfidf/stackoverflow_CVE/";
-        String modelDirectory = "./files/experiments/";
+        String saveModel = "./files/experiments/rf.model";
+        String model = "./files/experiments/rf.model";
         String features = "./files/features/CVEFeaturesTFIDF.txt";
 
         // create model
@@ -16,7 +17,7 @@ public class UsingClassifier {
                 .dataset("/Users/anja/Desktop/master/api/files/experiments/stackoverflow.arff")
                 .features(features)
                 .createModel(true)
-                .saveModelPath(modelDirectory)
+                .saveModelPath(saveModel)
                 .learner(Classifier.RANDOMFOREST)
                 .build();
 
@@ -26,11 +27,34 @@ public class UsingClassifier {
         Classifier cl = new Classifier.Builder()
                 .dataset(path2 + "derby.arff")
                 .features(features)
-                .modelDirectory(modelDirectory)
+                .model(model)
                 .learner(Classifier.RANDOMFOREST)
                 .build();
 
         cl.run();
 
+        // create model CNN
+        Classifier cnn = new Classifier.Builder()
+                .dataset("/Users/anja/Desktop/master/api/files/experiments/stackoverflow_word2vec.csv")
+                .createModel(true)
+                .saveModelPath("./files/experiments/cnn.model")
+                .learner(Classifier.CNN)
+                .classesCount(2)
+                .indexLabel(99)
+                .featureCount(99)
+                .build();
+
+        cnn.run();
+
+        // test model CNN
+        Classifier cnnTest = new Classifier.Builder()
+                .dataset("./files/validationWord2Vec/derby_word2vec_cve.csv")
+                .model("./files/experiments/cnn.model")
+                .learner(Classifier.CNN)
+                .classesCount(2)
+                .indexLabel(99)
+                .build();
+
+        cnnTest.run();
     }
 }

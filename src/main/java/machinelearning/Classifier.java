@@ -10,25 +10,33 @@ public class Classifier {
     public static final String SVM = "svm";
     public static final String IBK = "ibk";
     public static final String LOGISTICTREGRESSION = "lr";
+    public static final String CNN = "cnn";
 
     private String learner;
     private String dataset;
     private String features;
-    private String modelDirectory;
+    private String model;
     private String saveModelPath;
-    private boolean createModel = false;
-    private int numFolds = 5;
+    private boolean createModel;
+    private int numFolds;
+    private boolean stem;
+    private int indexLabel;
+    private int classesCount;
+    private int featureCount;
 
     public static class Builder {
 
         private String learner = Classifier.RANDOMFOREST; // standard
         private String dataset;
         private String features;
-        private String modelDirectory;
+        private String model;
         private String saveModelPath;
         private boolean createModel = false;
         private int numFolds = 5;
-        //private boolean stem? etc.
+        private boolean stem;
+        private int indexLabel = 99;
+        private int classesCount = 2;
+        private int featureCount = 99;
 
         public Builder(){
 
@@ -49,8 +57,8 @@ public class Classifier {
             return this;
         }
 
-        public Builder modelDirectory(String modelDirectory) {
-            this.modelDirectory = modelDirectory;
+        public Builder model(String model) {
+            this.model = model;
             return this;
         }
 
@@ -69,16 +77,40 @@ public class Classifier {
             return this;
         }
 
+        public Builder stem(boolean stem) {
+            this.stem = stem;
+            return this;
+        }
+
+        public Builder indexLabel(int indexLabel) {
+            this.indexLabel = indexLabel;
+            return this;
+        }
+
+        public Builder classesCount(int classesCount) {
+            this.classesCount = classesCount;
+            return this;
+        }
+
+        public Builder featureCount(int featureCount) {
+            this.featureCount = featureCount;
+            return this;
+        }
+
         public Classifier build() {
 
             Classifier classifier = new Classifier();
             classifier.learner = this.learner;
             classifier.dataset = this.dataset;
             classifier.features = this.features;
-            classifier.modelDirectory = this.modelDirectory;
+            classifier.model = this.model;
             classifier.saveModelPath = this.saveModelPath;
             classifier.createModel = this.createModel;
             classifier.numFolds = this.numFolds;
+            classifier.stem = this.stem;
+            classifier.indexLabel = this.indexLabel;
+            classifier.classesCount = this.classesCount;
+            classifier.featureCount = this.featureCount;
 
             return classifier;
         }
@@ -91,9 +123,18 @@ public class Classifier {
         try {
             ClassifierHelper cl = new ClassifierHelper(this);
             if(this.createModel)
-                cl.createModel();
-            else
-                cl.classify();
+                if(this.learner.equals(Classifier.CNN)){
+                    cl.createCNNModel();
+                } else {
+                    cl.createModel();
+                }
+            else {
+                if(this.learner.equals(Classifier.CNN)){
+                    cl.classifyCNN();
+                } else {
+                    cl.classify();
+                }
+            }
         } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException | IOException e) {
             e.printStackTrace();
         }
@@ -123,12 +164,12 @@ public class Classifier {
         this.features = features;
     }
 
-    public String getModelDirectory() {
-        return modelDirectory;
+    public String getModel() {
+        return model;
     }
 
-    public void setModelDirectory(String modelDirectory) {
-        this.modelDirectory = modelDirectory;
+    public void setModel(String model) {
+        this.model = model;
     }
 
     public String getSaveModelPath() {
@@ -153,5 +194,37 @@ public class Classifier {
 
     public void setNumFolds(int numFolds) {
         this.numFolds = numFolds;
+    }
+
+    public boolean isStem() {
+        return stem;
+    }
+
+    public void setStem(boolean stem) {
+        this.stem = stem;
+    }
+
+    public int getIndexLabel() {
+        return indexLabel;
+    }
+
+    public void setIndexLabel(int indexLabel) {
+        this.indexLabel = indexLabel;
+    }
+
+    public int getClassesCount() {
+        return classesCount;
+    }
+
+    public void setClassesCount(int classesCount) {
+        this.classesCount = classesCount;
+    }
+
+    public int getFeatureCount() {
+        return featureCount;
+    }
+
+    public void setFeatureCount(int featureCount) {
+        this.featureCount = featureCount;
     }
 }
