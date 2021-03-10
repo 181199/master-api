@@ -131,7 +131,7 @@ public class ClassifierHelper {
         }
     }
 
-    public static Instances loadDataset(String path) {
+    private static Instances loadDataset(String path) {
         Instances dataset = null;
         try {
             dataset = ConverterUtils.DataSource.read(path);
