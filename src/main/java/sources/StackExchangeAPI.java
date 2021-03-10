@@ -1,1388 +1,432 @@
+/**
+ *
+ */
 package sources;
 
-import machinelearning.utils.Cleanup;
-import machinelearning.utils.MergeFiles;
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.config.CookieSpecs;
-import org.apache.http.client.config.RequestConfig;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.util.EntityUtils;
-import org.deeplearning4j.models.word2vec.Word2Vec;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.jsoup.Jsoup;
-import org.nd4j.linalg.api.ndarray.INDArray;
-import org.nd4j.linalg.factory.Nd4j;
-import similarity.TFIDFSimilarity;
-import similarity.Word2VecSimilarity;
 
-import java.io.*;
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
-import java.net.URLEncoder;
-import java.text.SimpleDateFormat;
-import java.util.*;
-import java.util.regex.Pattern;
+import java.util.List;
+
+
 
 public class StackExchangeAPI {
 
-    private static StringBuilder builder;
-    private static StringBuilder builder1;
-    private static StringBuilder builder2;
     public static final String STACKOVERFLOW = "stackoverflow";
     public static final String ASKUBUNTU = "askubuntu";
-    public static final String SERVERFAULT = "severfault";
+    public static final String SERVERFAULT = "serverfault";
     public static final String SOFTWAREENGINEERING = "softwareengineering";
 
-    public static void main(String[] args) throws IOException, NoSuchMethodException, IllegalAccessException, InvocationTargetException, InterruptedException {
 
-        MergeFiles m = new MergeFiles();
+    private String tags;
+    private String site;
+    private String api;
+    private String key;
+    private String source;
+    private String sourceDataset;
+    private List<String> terms;
+    private String tfidfVectorFile;
+    private int numFeaturesFactor;
+    private int numRecords;
+    private boolean onlyQuestion;
+    private boolean security;
+    private double threshold;
+    private boolean appendScoreToCsv;
+    private String pathToStoreResult;
 
-        String tags = "security";
-        String site = "stackoverflow";
-        String source = "CVE";
-        int numPages = 10;
-        String dataset = "/Users/anja/Desktop/master/api/files/sources/";
-        String terms = "/Users/anja/Desktop/master/api/files/features/";
-        String word2vec = "/Users/anja/Desktop/master/api/files/features/";
-        int numFeatures = 100;
+    // additional filters
+    private int questionThreshold;
+    private int answerThreshold;
+    private boolean onlyCode;
 
-        String path = "./files/experiments/tfidf_2/";
+    // do we just want to collect without similarity
+    private boolean dataWithoutSimilarity;
 
-//        getNSRs("./files/experiments/NSR.csv", site, 1000, false);
-//        m.addSecurityLabel("./files/experiments/NSR.csv", "./files/experiments/NSR_sec.csv", true);
-//
-        //allMethods("./files/experiments/tfidf/stackoverflow_CVE/stackoverflow_SR.csv","./files/experiments/word2vec/stackoverflow_CVE/stackoverflow_SR.csv", "./files/experiments/tfidfword2vec/stackoverflow_CVE/stackoverflow_SR.csv", dataset + "cve.csv", terms + "CVEFeaturesTFIDF.txt", word2vec + "cve_word2vec_model.txt", site,  tags,0.7, 1000, numFeatures, true, true);
-        //allMethods("./files/experiments/tfidf/stackoverflow_CWE/stackoverflow_SR.csv","./files/experiments/word2vec/stackoverflow_CWE/stackoverflow_SR.csv", "./files/experiments/tfidfword2vec/stackoverflow_CWE/stackoverflow_SR.csv", dataset + "cve.csv", terms + "CWEFeaturesTFIDF.txt", word2vec + "cwe_word2vec_model.txt", site, tags, 0.7, 1000, numFeatures, true, true);
-        //allMethods("./files/experiments/tfidf/stackoverflow_CAPEC/stackoverflow_SR.csv","./files/experiments/word2vec/stackoverflow_CAPEC/stackoverflow_SR.csv", "./files/experiments/tfidfword2vec/stackoverflow_CAPEC/stackoverflow_SR.csv", dataset + "cve.csv", terms + "CAPECFeaturesTFIDF.txt", word2vec + "capec_word2vec_model.txt", site, tags, 0.7, 1000, numFeatures, true, true);
+
+    public static class Builder {
+
+        private String tags = "";
+        private String site = "stackoverflow";
+        private String api = "https://api.stackexchange.com/2.2/questions";		// must also think of being able to configure an access key
+        private String key = "IT8vJtd)vD02vi1lzs5mHg((";
+        private String source;
+        private String sourceDataset;
+        private List<String> terms;
+        private String tfidfVectorFile;
+        private int numFeaturesFactor = 1;			// 5 means, do multiple of 100: 100, 200, 300, 400, 500
+        private int numRecords = 1000;				// default. 1000 records
+        private boolean onlyQuestion = true;		// default
+        private boolean security = true;			// default
+        private double threshold = 0.6;				// default
+        private boolean appendScoreToCsv = true;	// default
+        private String pathToStoreResult;
+
+        // additional filters
+        private int questionThreshold = 0;			// default = 0. Do we want voted questions?
+        private int answerThreshold = 0;			// default = 0. Do we want voted answers?
+        private boolean onlyCode = false;			// default = false. Do we want to extract only code?
+
+        // do we just want to collect without similarity
+        private boolean dataWithoutSimilarity = false;	// default
+
+        public Builder() {
+            // empty constructor
+        }
+
+        /**
+         *
+         * @param api - which stackexchange api should be used?
+         * default = https://api.stackexchange.com/2.2/questions
+         */
+        public Builder stackexchangeAPI(String api) {
+            this.api = api;
+
+            return this;
+        }
+
+        /**
+         *
+         * @param tags - provide the tags to use for filtering post (e.g. security, iot, database, java)
+         */
+        public Builder tags(String tags) {
+            this.tags = tags;
+
+            return this;
+        }
+
+        /**
+         * @param site - stackexchange site, e.g. stackoverflow
+         * default = stackoverflow
+         */
+        public Builder site(String site) {
+            this.site = site;
+
+            return this;
+        }
+
+        /**
+         * @param source - which security source to use as benchmark for computing similarity: CVE, CWE, CAPEC
+         */
+        public Builder source(String source) {
+            this.source = source;
+
+            return this;
+        }
+
+        /**
+         * @param sourceDataset - full directory of the security source dataset (e.g. /User/owner/source/cve.csv)
+         */
+        public Builder sourceDataset(String sourceDataset) {
+            this.sourceDataset = sourceDataset;
+
+            return this;
+        }
+
+        /**
+         *
+         * @param terms - A List containing the full paths to each type of feature (e.g. /User/owner/features/TFIDFCVEFeatures.txt, /User/owner/features/word2vecCVEFeatures.txt)
+         */
+        public Builder terms(List<String> terms) {
+            this.terms = terms;
+
+            return this;
+        }
+
+        /**
+         *
+         * @param tfidfVectorFile - provide the file where the tfidf vector for the benchmark dataset is computed.
+         */
+        public Builder tfidfVectorFile(String tfidfVectorFile) {
+            this.tfidfVectorFile = tfidfVectorFile;
+
+            return this;
+        }
+
+        /**
+         * @param onlyQuestion - Are we interested in only question or do we want to collect question and question+answer dataset?
+         * default = true
+         */
+        public Builder onlyQuestion(boolean onlyQuestion) {
+            this.onlyQuestion = onlyQuestion;
+
+            return this;
+        }
+
+        /**
+         *
+         * @param factor - a factor showing how many multiple of 100 for each feature type. Factor of 5 means, the algorithm will collect 5 different types of dataset using 100, 200, 300, 400, 500 features
+         * default = 1
+         */
+        public Builder numFeaturesFactor(int factor) {
+            this.numFeaturesFactor = factor;
+
+            return this;
+        }
+
+        /**
+         *
+         * @param numRecords - how many should we collect? default = 1000
+         */
+        public Builder numRecords(int numRecords) {
+            this.numRecords = numRecords;
+
+            return this;
+        }
+
+        /**
+         * @param security - is it security dataset we are interested in?
+         * default = true
+         */
+        public Builder security(boolean security) {
+            this.security = security;
+
+            return this;
+        }
+
+        /**
+         * @param threshold - what threshold should be used for cosine similarity between the source and the security record?
+         * default = 0.6
+         */
+        public Builder threshold(double threshold) {
+            this.threshold = threshold;
+
+            return this;
+        }
+
+        /**
+         *
+         * @param appendScoreToCsv - should we append cosine similarity score to the result file?
+         */
+        public Builder appendScoreToCsv(boolean appendScoreToCsv) {
+            this.appendScoreToCsv = appendScoreToCsv;
+
+            return this;
+        }
+
+        /**
+         *
+         * @param questionThreshold - Do we want only questions that have been voted?
+         * default = 0 (accept all questions)
+         */
+        public Builder questionThreshold(int questionThreshold) {
+            this.questionThreshold = questionThreshold;
+
+            return this;
+        }
+
+        /**
+         *
+         * @param answerThreshold - Do we want voted answers?
+         * default = 0 (accept all answers)
+         */
+        public Builder answerThreshold(int answerThreshold) {
+            this.answerThreshold = answerThreshold;
+
+            return this;
+        }
+
+        /**
+         *
+         * @param onlyCode - Do we want only code? What type of code language? Combine with tags (e.g. tag = java)
+         */
+        public Builder onlyCode(boolean onlyCode) {
+            this.onlyCode = onlyCode;
+
+            return this;
+        }
+
+        /**
+         *
+         * @param pathToStoreResult - full directory where results should be stored
+         */
+        public Builder pathToStoreResult(String pathToStoreResult) {
+            this.pathToStoreResult = pathToStoreResult;
+
+            return this;
+        }
+
+        /**
+         *
+         * @param dataWithoutSimilarity - do we want to collect data (SR or NSR) without any similarity measure
+         */
+        public Builder dataWithoutSimilarity(boolean dataWithoutSimilarity) {
+            this.dataWithoutSimilarity = dataWithoutSimilarity;
+
+            return this;
+        }
+
+        public StackExchangeAPI build() {
+
+            StackExchangeAPI dataapi = new StackExchangeAPI();
+            dataapi.tags = this.tags;
+            dataapi.site = this.site;
+            dataapi.api = this.api;
+            dataapi.source = this.source;
+            dataapi.sourceDataset = this.sourceDataset;
+            dataapi.terms = this.terms;
+            dataapi.tfidfVectorFile = this.tfidfVectorFile;
+            dataapi.numFeaturesFactor = this.numFeaturesFactor;
+            dataapi.numRecords = this.numRecords;
+            dataapi.onlyQuestion = this.onlyQuestion;
+            dataapi.security = this.security;
+            dataapi.threshold = this.threshold;
+            dataapi.appendScoreToCsv = this.appendScoreToCsv;
+            dataapi.pathToStoreResult = this.pathToStoreResult;
+
+            dataapi.questionThreshold = this.questionThreshold;
+            dataapi.answerThreshold = this.answerThreshold;
+            dataapi.onlyCode = this.onlyCode;
+
+            dataapi.dataWithoutSimilarity = this.dataWithoutSimilarity;
+
+            return dataapi;
+        }
 
     }
 
-    public static void getSRs(String newFile, String site, int numSRs, boolean getAnswers) throws UnsupportedEncodingException {
-        PrintWriter pw = null;
+    private StackExchangeAPI() {
+        // private constructor
+    }
+
+    /**
+     * call this method to start collecting data
+     */
+    public void run() {
+        //
         try {
-            pw = new PrintWriter(new File(newFile));
-        } catch (FileNotFoundException e) {
+            StackExchangeAPIHelper api = new StackExchangeAPIHelper(this);
+            if(this.dataWithoutSimilarity)
+                api.fetchAll();
+            else
+                api.fetch();
+        } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException | IOException e) {
             e.printStackTrace();
         }
-        builder = new StringBuilder();
-        String columnNamesList = "Title;Description;Id;Date";
-        builder.append(columnNamesList + "\n");
-
-        Boolean hasMore = true;
-        int page = 1;
-        int SRs = 0;
-        while (SRs < numSRs) {
-            HttpClient client = HttpClientBuilder.create()
-                    .setDefaultRequestConfig(RequestConfig.custom()
-                            .setCookieSpec(CookieSpecs.STANDARD).build())
-                    .build();
-            HttpGet request = new HttpGet("https://api.stackexchange.com/2.2/questions?page=" + page + "&pagesize=100&order=desc&sort=activity&site=" + site + "&filter=!--1nZwT3Ejsm&key=IT8vJtd)vD02vi1lzs5mHg((");
-
-            try {
-                HttpResponse response = client.execute(request);
-                HttpEntity entity = response.getEntity();
-
-                // Read the contents of an entity and return it as a String.
-                String content = EntityUtils.toString(entity);
-                System.out.println(content);
-
-                JSONObject result = new JSONObject(content);
-
-                try {
-                    hasMore = result.getBoolean("has_more");
-                } catch (Exception e) {
-                    hasMore = false;
-                }
-
-                JSONArray tokenList = new JSONArray();
-                try {
-                    tokenList = result.getJSONArray("items");
-                } catch (Exception e) {
-                    break;
-                }
-                for (int i = 0; i < tokenList.length(); i++) {
-                    JSONObject oj = tokenList.getJSONObject(i);
-
-                    boolean security = false;
-
-                    JSONArray tags = oj.getJSONArray("tags");
-                    for (int t = 0; t < tags.length(); t++) {
-                        if (tags.get(t).toString().contains("security")) {
-                            security = true;
-                            break;
-                        }
-                    }
-
-                    if (security && SRs < numSRs) {
-                        String title = oj.getString("title");
-                        title = title.replace(";", "");
-
-                        int id = oj.getInt("question_id");
-                        int date = oj.getInt("creation_date");
-                        Date time = new Date((long) date * 1000);
-
-                        String newTime = new SimpleDateFormat("dd-MM-yyyy").format(time);
-
-                        String body = oj.getString("body");
-                        String cleanText = html2text(body);
-
-                        Boolean is_answered = oj.getBoolean("is_answered");
-                        if (getAnswers && is_answered) {
-                            int answerNumber = oj.getInt("answer_count");
-                            if (answerNumber != 0) {
-                                JSONArray answers = oj.getJSONArray("answers");
-
-                                for (int j = 0; j < answerNumber; j++) {
-                                    JSONObject answerObj = answers.getJSONObject(j);
-                                    String answer = answerObj.getString("body");
-                                    cleanText = cleanText + " " + html2text(answer);
-                                }
-                            }
-                        }
-
-                        cleanText = cleanText.replace("\n", "").replace("\r", "").replace(";", "");
-
-                        builder.append(title + ";");
-                        builder.append(cleanText + ";");
-                        builder.append(id + ";");
-                        builder.append(newTime);
-                        builder.append('\n');
-                    }
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            if (hasMore) {
-                page++;
-            } else {
-                break;
-            }
-        }
-        pw.write(builder.toString());
-        pw.close();
-        System.out.println("done!");
     }
 
-    public static void getNSRs(String newFile, String site, int numNSRs, boolean getAnswers) throws UnsupportedEncodingException {
-        PrintWriter pw = null;
-        try {
-            pw = new PrintWriter(new File(newFile));
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
-        builder = new StringBuilder();
-        String columnNamesList = "Title;Description;Id;Date";
-        builder.append(columnNamesList + "\n");
-
-        boolean hasMore = true;
-        int page = 1;
-        int NSRs = 0;
-        while (NSRs < numNSRs) {
-            HttpClient client = HttpClientBuilder.create()
-                    .setDefaultRequestConfig(RequestConfig.custom()
-                            .setCookieSpec(CookieSpecs.STANDARD).build())
-                    .build();
-            HttpGet request = new HttpGet("https://api.stackexchange.com/2.2/questions?page=" + page + "&pagesize=100&order=desc&sort=activity&&site=" + site + "&filter=!--1nZwT3Ejsm&key=IT8vJtd)vD02vi1lzs5mHg((");
-
-            try {
-                HttpResponse response = client.execute(request);
-                HttpEntity entity = response.getEntity();
-
-                // Read the contents of an entity and return it as a String.
-                String content = EntityUtils.toString(entity);
-
-                JSONObject result = new JSONObject(content);
-
-                hasMore = result.getBoolean("has_more");
-
-                JSONArray tokenList = new JSONArray();
-                try {
-                    tokenList = result.getJSONArray("items");
-                } catch (Exception e) {
-                    break;
-                }
-                for (int i = 0; i < tokenList.length(); i++) {
-                    JSONObject oj = tokenList.getJSONObject(i);
-                    String title = oj.getString("title");
-                    title = title.replace(";", "");
-
-                    boolean security = false;
-
-                    JSONArray tags = oj.getJSONArray("tags");
-                    for (int j = 0; j < tags.length(); j++) {
-                        if (tags.get(j).toString().contains("security")) {
-                            security = true;
-                            break;
-                        }
-                    }
-
-                    if (!security && NSRs < numNSRs) {
-                        int id = oj.getInt("question_id");
-                        int date = oj.getInt("creation_date");
-                        Date time = new Date((long) date * 1000);
-
-                        String newTime = new SimpleDateFormat("dd-MM-yyyy").format(time);
-
-                        String body = oj.getString("body");
-                        String cleanText = html2text(body);
-
-                        Boolean is_answered = oj.getBoolean("is_answered");
-                        if (getAnswers && is_answered) {
-                            int answerNumber = oj.getInt("answer_count");
-                            if (answerNumber != 0) {
-                                JSONArray answers = oj.getJSONArray("answers");
-
-                                for (int j = 0; j < answerNumber; j++) {
-                                    JSONObject answerObj = answers.getJSONObject(j);
-                                    String answer = answerObj.getString("body");
-                                    cleanText = cleanText + " " + html2text(answer);
-                                }
-                            }
-                        }
-
-                        cleanText = cleanText.replace("\n", "").replace("\r", "").replace(";", "");
-
-                        builder.append(title + ";");
-                        builder.append(cleanText + ";");
-                        builder.append(id + ";");
-                        builder.append(newTime);
-                        builder.append('\n');
-                        NSRs++;
-                    }
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            if (hasMore) {
-                page++;
-            } else {
-                break;
-            }
-        }
-        pw.write(builder.toString());
-        pw.close();
-        System.out.println("done!");
+    /**
+     * @return the tags
+     */
+    public String getTags() {
+        return tags;
     }
 
-    // using the average of the highest tfidf and word2vec score under a set threshold
-    public static void getNSRsWithThreshold(String newFile, String benchmarkDataset, String terms, String word2vec, String site, double threshold, int numNSRs, int numFeatures, boolean getAnswers, boolean getAnswersWithThreshold, boolean appendScoreToCSV) throws IOException, NoSuchMethodException, IllegalAccessException, InvocationTargetException {
-        PrintWriter pw = null;
-        try {
-            pw = new PrintWriter(new File(newFile));
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
-        builder = new StringBuilder();
-        String columnNamesList = "";
-        if (appendScoreToCSV) {
-            columnNamesList = "Title;Description;Id;Date;cossim";
-        } else {
-            columnNamesList = "Title;Description;Id;Date";
-        }
-        builder.append(columnNamesList + "\n");
-
-        TFIDFSimilarity d = new TFIDFSimilarity();
-
-        List<String> features = d.getTermsFromFile(terms, 200);
-
-        List<String[]> docsArray = d.getDocsArrayFromCsv(benchmarkDataset);
-        List<double[]> tfidfDocsVector = d.tfIdfCalculator(docsArray, docsArray, features);
-
-        Word2VecSimilarity w = new Word2VecSimilarity();
-
-        Word2Vec model = w.getWord2Vec(word2vec);
-
-        List<Collection<String>> benchmarkSentences = new ArrayList<>();
-        w.getSentences(benchmarkDataset, benchmarkSentences);
-        List<INDArray> input_vectors = new ArrayList<>();
-
-        for (int m = 0; m < benchmarkSentences.size(); m++) {
-            input_vectors.add(w.getVector(benchmarkSentences.get(m), model, numFeatures));
-        }
-
-        Boolean hasMore = true;
-        int page = 1;
-        int NSRs = 0;
-        while (NSRs < numNSRs) {
-            HttpClient client = HttpClientBuilder.create()
-                    .setDefaultRequestConfig(RequestConfig.custom()
-                            .setCookieSpec(CookieSpecs.STANDARD).build())
-                    .build();
-            HttpGet request = new HttpGet("https://api.stackexchange.com/2.2/questions?page=" + page + "&pagesize=100&order=desc&sort=activity&&site=" + site + "&filter=!--1nZwT3Ejsm&key=IT8vJtd)vD02vi1lzs5mHg((");
-
-            try {
-                HttpResponse response = client.execute(request);
-                HttpEntity entity = response.getEntity();
-
-                // Read the contents of an entity and return it as a String.
-                String content = EntityUtils.toString(entity);
-
-                JSONObject result = new JSONObject(content);
-
-                try {
-                    hasMore = result.getBoolean("has_more");
-                } catch (Exception e) {
-                    hasMore = false;
-                }
-
-                boolean security = false;
-
-                JSONArray tokenList = new JSONArray();
-                try {
-                    tokenList = result.getJSONArray("items");
-                } catch (Exception e) {
-                    break;
-                }
-
-                for (int i = 0; i < tokenList.length(); i++) {
-                    JSONObject oj = tokenList.getJSONObject(i);
-                    String title = oj.getString("title");
-                    title = title.replace(";", "");
-
-                    JSONArray tags = oj.getJSONArray("tags");
-                    for (int j = 0; j < tags.length(); j++) {
-                        if (tags.get(j).toString().contains("security")) {
-                            security = true;
-                        }
-                    }
-
-                    if (!security && NSRs < numNSRs) {
-                        int id = oj.getInt("question_id");
-                        int date = oj.getInt("creation_date");
-                        Date time = new Date((long) date * 1000);
-
-                        String newTime = new SimpleDateFormat("dd-MM-yyyy").format(time);
-
-                        String body = oj.getString("body");
-                        String cleanText = html2text(body);
-
-                        List<String> postAnswers = new ArrayList<>();
-                        Boolean is_answered = oj.getBoolean("is_answered");
-                        if (getAnswers && is_answered) {
-                            int answerNumber = oj.getInt("answer_count");
-                            if (answerNumber != 0) {
-                                JSONArray answers = oj.getJSONArray("answers");
-
-                                for (int j = 0; j < answerNumber; j++) {
-                                    JSONObject answerObj = answers.getJSONObject(j);
-                                    String answer = answerObj.getString("body");
-                                    postAnswers.add(new Cleanup().cleanText(html2text(answer)).replace("\n", "").replace("\r", "").replace(";", ""));
-                                    if (!getAnswersWithThreshold) {
-                                        cleanText = cleanText + " " + html2text(answer);
-                                    }
-                                }
-                            }
-                        }
-
-                        cleanText = cleanText.replace("\n", "").replace("\r", "").replace(";", "");
-
-                        double tfidf = getTFIDFScore(cleanText, features, docsArray, tfidfDocsVector, d, threshold);
-
-                        double w2v = getWord2VecScore(cleanText, benchmarkSentences, input_vectors, model, w, numFeatures, threshold);
-
-                        double score = (tfidf + w2v) / 2;
-
-                        if (score <= threshold && !security && NSRs < numNSRs) {
-                            if (!postAnswers.isEmpty() && getAnswersWithThreshold) {
-                                for (int p = 0; p < postAnswers.size(); p++) {
-                                    double tfidfAnswer = getTFIDFScore(postAnswers.get(p), features, docsArray, tfidfDocsVector, d, threshold);
-                                    double w2vAnswer = getWord2VecScore(postAnswers.get(p), benchmarkSentences, input_vectors, model, w, numFeatures, threshold);
-
-                                    double answerScore = (tfidfAnswer + w2vAnswer) / 2;
-                                    if (answerScore <= threshold) {
-                                        cleanText = cleanText + " " + postAnswers.get(p);
-                                    }
-                                }
-                            }
-
-                            builder.append(title + ";");
-                            builder.append(cleanText + ";");
-                            builder.append(id + ";");
-                            builder.append(newTime);
-                            if (appendScoreToCSV) {
-                                builder.append(";" + score);
-                            }
-                            builder.append('\n');
-
-                            NSRs++;
-                        }
-                    }
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            if (hasMore) {
-                page++;
-            } else {
-                break;
-            }
-        }
-        pw.write(builder.toString());
-        pw.close();
-        System.out.println("done!");
+    /**
+     * @return the site
+     */
+    public String getSite() {
+        return site;
     }
 
-    // using the average of the highest tfidf and word2vec score over a set threshold
-    public static void getSRsWithThreshold(String newFile, String benchmarkDataset, String terms, String word2vec, String site, String tags, double threshold, int numSRs, int numFeatures, boolean getAnswers, boolean getAnswersWithThreshold, boolean appendScoreToCSV) throws IOException, NoSuchMethodException, IllegalAccessException, InvocationTargetException, InterruptedException {
-
-        PrintWriter pw = null;
-        try {
-            pw = new PrintWriter(new File(newFile));
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
-        builder = new StringBuilder();
-        String columnNamesList = "";
-        if (appendScoreToCSV) {
-            columnNamesList = "Title;Description;Id;Date;cossim";
-        } else {
-            columnNamesList = "Title;Description;Id;Date";
-        }
-        builder.append(columnNamesList + "\n");
-
-        TFIDFSimilarity d = new TFIDFSimilarity();
-        List<String> features = d.getTermsFromFile(terms, 200);
-
-        List<String[]> docsArray = d.getDocsArrayFromCsv(benchmarkDataset);
-        List<double[]> tfidfDocsVector = d.tfIdfCalculator(docsArray, docsArray, features);
-
-        Word2VecSimilarity w = new Word2VecSimilarity();
-
-        Word2Vec model = w.getWord2Vec(word2vec);
-
-        List<Collection<String>> benchmarkSentences = new ArrayList<>();
-        w.getSentences(benchmarkDataset, benchmarkSentences);
-        List<INDArray> input_vectors = new ArrayList<>();
-
-        for (int m = 0; m < benchmarkSentences.size(); m++) {
-            input_vectors.add(w.getVector(benchmarkSentences.get(m), model, numFeatures));
-        }
-
-        Boolean hasMore = true;
-        int page = 1;
-        int SRs = 0;
-        while (SRs < numSRs) {
-            HttpClient client = HttpClientBuilder.create()
-                    .setDefaultRequestConfig(RequestConfig.custom()
-                            .setCookieSpec(CookieSpecs.STANDARD).build())
-                    .build();
-            HttpGet request = new HttpGet("https://api.stackexchange.com/2.2/questions?page=" + page + "&pagesize=100&order=desc&sort=activity&tagged=" + URLEncoder.encode(tags, "UTF-8") + "&site=" + site + "&filter=!--1nZwT3Ejsm&key=IT8vJtd)vD02vi1lzs5mHg((");
-
-            try {
-                HttpResponse response = client.execute(request);
-                HttpEntity entity = response.getEntity();
-
-                // Read the contents of an entity and return it as a String.
-                String content = EntityUtils.toString(entity);
-
-                JSONObject result = new JSONObject(content);
-
-                try {
-                    hasMore = result.getBoolean("has_more");
-                } catch (Exception e) {
-                }
-
-                JSONArray tokenList = new JSONArray();
-                try {
-                    tokenList = result.getJSONArray("items");
-                } catch (Exception e) {
-                }
-                if (!tokenList.isEmpty()) {
-                    for (int i = 0; i < tokenList.length(); i++) {
-                        JSONObject oj = tokenList.getJSONObject(i);
-
-                        if (SRs < numSRs) {
-                            String title = oj.getString("title");
-                            title = title.replace(";", "");
-
-                            int id = oj.getInt("question_id");
-                            int date = oj.getInt("creation_date");
-                            Date time = new Date((long) date * 1000);
-
-                            String newTime = new SimpleDateFormat("dd-MM-yyyy").format(time);
-
-                            String body = oj.getString("body");
-                            String cleanText = html2text(body);
-
-                            List<String> postAnswers = new ArrayList<>();
-                            Boolean is_answered = oj.getBoolean("is_answered");
-                            if (getAnswers && is_answered) {
-                                int answerNumber = oj.getInt("answer_count");
-                                if (answerNumber != 0) {
-                                    JSONArray answers = oj.getJSONArray("answers");
-
-                                    for (int j = 0; j < answerNumber; j++) {
-                                        JSONObject answerObj = answers.getJSONObject(j);
-                                        String answer = answerObj.getString("body");
-                                        postAnswers.add(new Cleanup().cleanText(html2text(answer)).replace("\n", "").replace("\r", "").replace(";", ""));
-                                        if (!getAnswersWithThreshold) {
-                                            cleanText = cleanText + " " + html2text(answer);
-                                        }
-                                    }
-                                }
-                            }
-
-                            cleanText = cleanText.replace("\n", "").replace("\r", "").replace(";", "");
-
-                            double tfidf = getTFIDFScore(cleanText, features, docsArray, tfidfDocsVector, d, threshold);
-
-                            double w2v = getWord2VecScore(cleanText, benchmarkSentences, input_vectors, model, w, numFeatures, threshold);
-
-                            double score = (tfidf + w2v) / 2;
-
-                            if (score >= threshold && SRs < numSRs) {
-                                if (!postAnswers.isEmpty() && getAnswersWithThreshold) {
-                                    for (int p = 0; p < postAnswers.size(); p++) {
-                                        double tfidfAnswer = getTFIDFScore(postAnswers.get(p), features, docsArray, tfidfDocsVector, d, threshold);
-                                        double w2vAnswer = getWord2VecScore(postAnswers.get(p), benchmarkSentences, input_vectors, model, w, numFeatures, threshold);
-
-                                        double answerScore = (tfidfAnswer + w2vAnswer) / 2;
-                                        if (answerScore >= threshold) {
-                                            cleanText = cleanText + " " + postAnswers.get(p);
-                                        }
-                                    }
-                                }
-
-                                builder.append(title + ";");
-                                builder.append(cleanText + ";");
-                                builder.append(id + ";");
-                                builder.append(newTime);
-                                if (appendScoreToCSV) {
-                                    builder.append(";" + score);
-                                }
-                                builder.append('\n');
-
-                                SRs++;
-                                System.out.println(SRs);
-                            }
-                        }
-                    }
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            if (hasMore) {
-                page++;
-            } else {
-                break;
-            }
-        }
-        pw.write(builder.toString());
-        pw.close();
-        System.out.println("done!");
+    /**
+     * @return the api
+     */
+    public String getApi() {
+        return api;
     }
 
-    public static void getNSRsWithThresholdTFIDF(String newFile, String benchmarkDataset, String terms, String site, double threshold, int numNSRs, int numFeatures, boolean getAnswers, boolean getAnswersWithThreshold, boolean appendScoreToCSV) throws IOException {
-        PrintWriter pw = null;
-        try {
-            pw = new PrintWriter(new File(newFile));
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
-        builder = new StringBuilder();
-        String columnNamesList = "";
-        if (appendScoreToCSV) {
-            columnNamesList = "Title;Description;Id;Date;cossim";
-        } else {
-            columnNamesList = "Title;Description;Id;Date";
-        }
-        builder.append(columnNamesList + "\n");
-
-        TFIDFSimilarity d = new TFIDFSimilarity();
-
-        List<String> features = d.getTermsFromFile(terms, 200);
-
-        List<String[]> docsArray = d.getDocsArrayFromCsv(benchmarkDataset);
-        List<double[]> tfidfDocsVector = d.tfIdfCalculator(docsArray, docsArray, features);
-
-        Boolean hasMore = true;
-        int page = 1;
-        int NSRs = 0;
-        while (NSRs < numNSRs) {
-            HttpClient client = HttpClientBuilder.create()
-                    .setDefaultRequestConfig(RequestConfig.custom()
-                            .setCookieSpec(CookieSpecs.STANDARD).build())
-                    .build();
-            HttpGet request = new HttpGet("https://api.stackexchange.com/2.2/questions?page=" + page + "&pagesize=100&order=desc&sort=activity&&site=" + site + "&filter=!--1nZwT3Ejsm&key=IT8vJtd)vD02vi1lzs5mHg((");
-
-            try {
-                HttpResponse response = client.execute(request);
-                HttpEntity entity = response.getEntity();
-
-                // Read the contents of an entity and return it as a String.
-                String content = EntityUtils.toString(entity);
-
-                JSONObject result = new JSONObject(content);
-
-                try {
-                    hasMore = result.getBoolean("has_more");
-                } catch (Exception e) {
-                    hasMore = false;
-                }
-
-                JSONArray tokenList = new JSONArray();
-                try {
-                    tokenList = result.getJSONArray("items");
-                } catch (Exception e) {
-                    break;
-                }
-                for (int i = 0; i < tokenList.length(); i++) {
-                    JSONObject oj = tokenList.getJSONObject(i);
-
-                    boolean security = false;
-
-                    JSONArray tags = oj.getJSONArray("tags");
-                    for (int j = 0; j < tags.length(); j++) {
-                        if (tags.get(j).toString().contains("security")) {
-                            security = true;
-                            break;
-                        }
-                    }
-
-                    if (!security && NSRs < numNSRs) {
-                        String title = oj.getString("title");
-                        title = title.replace(";", "");
-
-                        int id = oj.getInt("question_id");
-                        int date = oj.getInt("creation_date");
-                        Date time = new Date((long) date * 1000);
-
-                        String newTime = new SimpleDateFormat("dd-MM-yyyy").format(time);
-
-                        String body = oj.getString("body");
-                        String cleanText = html2text(body);
-
-                        List<String> postAnswers = new ArrayList<>();
-                        Boolean is_answered = oj.getBoolean("is_answered");
-                        if (getAnswers && is_answered) {
-                            int answerNumber = oj.getInt("answer_count");
-                            if (answerNumber != 0) {
-                                JSONArray answers = oj.getJSONArray("answers");
-
-                                for (int j = 0; j < answerNumber; j++) {
-                                    JSONObject answerObj = answers.getJSONObject(j);
-                                    String answer = answerObj.getString("body");
-                                    postAnswers.add(new Cleanup().cleanText(html2text(answer)).replace("\n", "").replace("\r", "").replace(";", ""));
-                                    if (!getAnswersWithThreshold) {
-                                        cleanText = cleanText + " " + html2text(answer);
-                                    }
-                                }
-                            }
-                        }
-
-                        cleanText = cleanText.replace("\n", "").replace("\r", "").replace(";", "");
-
-                        double score = getTFIDFScore(cleanText, features, docsArray, tfidfDocsVector, d, threshold);
-
-                        if (score <= threshold && NSRs < numNSRs) {
-                            if (!postAnswers.isEmpty() && getAnswersWithThreshold) {
-                                for (int p = 0; p < postAnswers.size(); p++) {
-                                    double answerScore = getTFIDFScore(postAnswers.get(p), features, docsArray, tfidfDocsVector, d, threshold);
-
-                                    if (answerScore <= threshold) {
-                                        cleanText = cleanText + " " + postAnswers.get(p);
-                                    }
-                                }
-                            }
-
-                            builder.append(title + ";");
-                            builder.append(cleanText + ";");
-                            builder.append(id + ";");
-                            builder.append(newTime);
-                            if (appendScoreToCSV) {
-                                builder.append(";" + score);
-                            }
-                            builder.append('\n');
-
-                            NSRs++;
-                        }
-                    }
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            if (hasMore) {
-                page++;
-            } else {
-                break;
-            }
-        }
-        pw.write(builder.toString());
-        pw.close();
-        System.out.println("done!");
+    /**
+     * @return the source
+     */
+    public String getSource() {
+        return source;
     }
 
-    public static void getSRsWithThresholdTFIDF(String newFile, String benchmarkDataset, String terms, String site, String tags, double threshold, int numSRs, int numFeatures, boolean getAnswers, boolean getAnswersWithThreshold, boolean appendScoreToCSV) throws IOException, InterruptedException {
-
-        PrintWriter pw = null;
-        try {
-            pw = new PrintWriter(new File(newFile));
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
-        builder = new StringBuilder();
-        String columnNamesList = "";
-        if (appendScoreToCSV) {
-            columnNamesList = "Title;Description;Id;Date;cossim";
-        } else {
-            columnNamesList = "Title;Description;Id;Date";
-        }
-        builder.append(columnNamesList + "\n");
-
-        TFIDFSimilarity d = new TFIDFSimilarity();
-        List<String> features = d.getTermsFromFile(terms, 200);
-
-        List<String[]> docsArray = d.getDocsArrayFromCsv(benchmarkDataset);
-        List<double[]> tfidfDocsVector = d.tfIdfCalculator(docsArray, docsArray, features);
-
-        Boolean hasMore = true;
-        int page = 1;
-        int SRs = 0;
-        while (SRs < numSRs) {
-            HttpClient client = HttpClientBuilder.create()
-                    .setDefaultRequestConfig(RequestConfig.custom()
-                            .setCookieSpec(CookieSpecs.STANDARD).build())
-                    .build();
-            HttpGet request = new HttpGet("https://api.stackexchange.com/2.2/questions?page=" + page + "&pagesize=100&order=desc&sort=activity&tagged=" + URLEncoder.encode(tags, "UTF-8") + "&site=" + site + "&filter=!--1nZwT3Ejsm&key=IT8vJtd)vD02vi1lzs5mHg((");
-
-            try {
-                HttpResponse response = client.execute(request);
-                HttpEntity entity = response.getEntity();
-
-                // Read the contents of an entity and return it as a String.
-                String content = EntityUtils.toString(entity);
-
-                JSONObject result = new JSONObject(content);
-
-                try {
-                    hasMore = result.getBoolean("has_more");
-                } catch (Exception e) {
-                }
-
-                JSONArray tokenList = new JSONArray();
-                try {
-                    tokenList = result.getJSONArray("items");
-                } catch (Exception e) {
-                }
-                if (!tokenList.isEmpty()) {
-                    for (int i = 0; i < tokenList.length(); i++) {
-                        JSONObject oj = tokenList.getJSONObject(i);
-
-                        if (SRs < numSRs) {
-                            String title = oj.getString("title");
-                            title = title.replace(";", "");
-
-                            int id = oj.getInt("question_id");
-                            int date = oj.getInt("creation_date");
-                            Date time = new Date((long) date * 1000);
-
-                            String newTime = new SimpleDateFormat("dd-MM-yyyy").format(time);
-
-                            String body = oj.getString("body");
-                            String cleanText = html2text(body);
-
-                            List<String> postAnswers = new ArrayList<>();
-                            Boolean is_answered = oj.getBoolean("is_answered");
-                            if (getAnswers && is_answered) {
-                                int answerNumber = oj.getInt("answer_count");
-                                if (answerNumber != 0) {
-                                    JSONArray answers = oj.getJSONArray("answers");
-
-                                    for (int j = 0; j < answerNumber; j++) {
-                                        JSONObject answerObj = answers.getJSONObject(j);
-                                        String answer = answerObj.getString("body");
-                                        postAnswers.add(new Cleanup().cleanText(html2text(answer)).replace("\n", "").replace("\r", "").replace(";", ""));
-                                        if (!getAnswersWithThreshold) {
-                                            cleanText = cleanText + " " + html2text(answer);
-                                        }
-                                    }
-                                }
-                            }
-
-                            cleanText = cleanText.replace("\n", "").replace("\r", "").replace(";", "");
-
-                            double score = getTFIDFScore(cleanText, features, docsArray, tfidfDocsVector, d, threshold);
-
-                            if (score >= threshold) {
-                                if (!postAnswers.isEmpty() && getAnswersWithThreshold) {
-                                    for (int p = 0; p < postAnswers.size(); p++) {
-                                        double answerScore = getTFIDFScore(postAnswers.get(p), features, docsArray, tfidfDocsVector, d, threshold);
-
-                                        if (answerScore >= threshold) {
-                                            cleanText = cleanText + " " + postAnswers.get(p);
-                                        }
-                                    }
-                                }
-
-                                builder.append(title + ";");
-                                builder.append(cleanText + ";");
-                                builder.append(id + ";");
-                                builder.append(newTime);
-                                if (appendScoreToCSV) {
-                                    builder.append(";" + score);
-                                }
-                                builder.append('\n');
-
-                                SRs++;
-                                System.out.println(SRs);
-                            }
-                        }
-                    }
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            if (hasMore) {
-                page++;
-            } else {
-                break;
-            }
-        }
-        pw.write(builder.toString());
-        pw.close();
-        System.out.println("done!");
+    /**
+     * @return the sourceDataset
+     */
+    public String getSourceDataset() {
+        return sourceDataset;
     }
 
-    public static void getNSRsWithThresholdWord2Vec(String newFile, String benchmarkDataset, String word2vec, String site, double threshold, int numNSRs, int numFeatures, boolean getAnswers, boolean getAnswersWithThreshold, boolean appendScoreToCSV) throws IOException, NoSuchMethodException, IllegalAccessException, InvocationTargetException {
-        PrintWriter pw = null;
-        try {
-            pw = new PrintWriter(new File(newFile));
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
-        builder = new StringBuilder();
-        String columnNamesList = "";
-        if (appendScoreToCSV) {
-            columnNamesList = "Title;Description;Id;Date;cossim";
-        } else {
-            columnNamesList = "Title;Description;Id;Date";
-        }
-        builder.append(columnNamesList + "\n");
-
-        Word2VecSimilarity w = new Word2VecSimilarity();
-
-        Word2Vec model = w.getWord2Vec(word2vec);
-
-        List<Collection<String>> benchmarkSentences = new ArrayList<>();
-        w.getSentences(benchmarkDataset, benchmarkSentences);
-        List<INDArray> input_vectors = new ArrayList<>();
-
-        for (int m = 0; m < benchmarkSentences.size(); m++) {
-            input_vectors.add(w.getVector(benchmarkSentences.get(m), model, numFeatures));
-        }
-
-        Boolean hasMore = true;
-        int page = 1;
-        int NSRs = 0;
-        while (NSRs < numNSRs) {
-            HttpClient client = HttpClientBuilder.create()
-                    .setDefaultRequestConfig(RequestConfig.custom()
-                            .setCookieSpec(CookieSpecs.STANDARD).build())
-                    .build();
-            HttpGet request = new HttpGet("https://api.stackexchange.com/2.2/questions?page=" + page + "&pagesize=100&order=desc&sort=activity&&site=" + site + "&filter=!--1nZwT3Ejsm&key=IT8vJtd)vD02vi1lzs5mHg((");
-
-            try {
-                HttpResponse response = client.execute(request);
-                HttpEntity entity = response.getEntity();
-
-                // Read the contents of an entity and return it as a String.
-                String content = EntityUtils.toString(entity);
-
-                JSONObject result = new JSONObject(content);
-
-                try {
-                    hasMore = result.getBoolean("has_more");
-                } catch (Exception e) {
-                    hasMore = false;
-                }
-
-                JSONArray tokenList = new JSONArray();
-                try {
-                    tokenList = result.getJSONArray("items");
-                } catch (Exception e) {
-                    break;
-                }
-                for (int i = 0; i < tokenList.length(); i++) {
-                    JSONObject oj = tokenList.getJSONObject(i);
-
-                    boolean security = false;
-
-                    JSONArray tags = oj.getJSONArray("tags");
-                    for (int j = 0; j < tags.length(); j++) {
-                        if (tags.get(j).toString().equals("security")) {
-                            security = true;
-                            break;
-                        }
-                    }
-
-                    if (!security && NSRs < numNSRs) {
-                        String title = oj.getString("title");
-                        title = title.replace(";", "");
-
-                        int id = oj.getInt("question_id");
-                        int date = oj.getInt("creation_date");
-                        Date time = new Date((long) date * 1000);
-
-                        String newTime = new SimpleDateFormat("dd-MM-yyyy").format(time);
-
-                        String body = oj.getString("body");
-                        String cleanText = html2text(body);
-
-                        List<String> postAnswers = new ArrayList<>();
-                        Boolean is_answered = oj.getBoolean("is_answered");
-                        if (getAnswers && is_answered) {
-                            int answerNumber = oj.getInt("answer_count");
-                            if (answerNumber != 0) {
-                                JSONArray answers = oj.getJSONArray("answers");
-
-                                for (int j = 0; j < answerNumber; j++) {
-                                    JSONObject answerObj = answers.getJSONObject(j);
-                                    String answer = answerObj.getString("body");
-                                    postAnswers.add(new Cleanup().cleanText(html2text(answer)).replace("\n", "").replace("\r", "").replace(";", ""));
-                                    if (!getAnswersWithThreshold) {
-                                        cleanText = cleanText + " " + html2text(answer);
-                                    }
-                                }
-                            }
-                        }
-
-                        cleanText = cleanText.replace("\n", "").replace("\r", "").replace(";", "");
-
-                        double score = getWord2VecScore(cleanText, benchmarkSentences, input_vectors, model, w, numFeatures, threshold);
-
-                        if (score <= threshold && NSRs < numNSRs) {
-                            if (!postAnswers.isEmpty() && getAnswersWithThreshold) {
-                                for (int p = 0; p < postAnswers.size(); p++) {
-                                    double answerScore = getWord2VecScore(postAnswers.get(p), benchmarkSentences, input_vectors, model, w, numFeatures, threshold);
-
-                                    if (answerScore <= threshold) {
-                                        cleanText = cleanText + " " + postAnswers.get(p);
-                                    }
-                                }
-                            }
-
-                            builder.append(title + ";");
-                            builder.append(cleanText + ";");
-                            builder.append(id + ";");
-                            builder.append(newTime);
-                            if (appendScoreToCSV) {
-                                builder.append(";" + score);
-                            }
-                            builder.append('\n');
-
-                            NSRs++;
-                        }
-                    }
-                    security = false;
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            if (hasMore) {
-                page++;
-            } else {
-                break;
-            }
-        }
-        pw.write(builder.toString());
-        pw.close();
-        System.out.println("done!");
+    /**
+     * @return the terms
+     */
+    public List<String> getTerms() {
+        return terms;
     }
 
-    public static void getSRsWithThresholdWord2Vec(String newFile, String benchmarkDataset, String word2vec, String site, String tags, double threshold, int numSRs, int numFeatures, boolean getAnswers, boolean getAnswersWithThreshold, boolean appendScoreToCSV) throws IOException, NoSuchMethodException, IllegalAccessException, InvocationTargetException, InterruptedException {
-
-        PrintWriter pw = null;
-        try {
-            pw = new PrintWriter(new File(newFile));
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
-        builder = new StringBuilder();
-        String columnNamesList = "";
-        if (appendScoreToCSV) {
-            columnNamesList = "Title;Description;Id;Date;cossim";
-        } else {
-            columnNamesList = "Title;Description;Id;Date";
-        }
-        builder.append(columnNamesList + "\n");
-
-        Word2VecSimilarity w = new Word2VecSimilarity();
-
-        Word2Vec model = w.getWord2Vec(word2vec);
-
-        List<Collection<String>> benchmarkSentences = new ArrayList<>();
-        w.getSentences(benchmarkDataset, benchmarkSentences);
-        List<INDArray> input_vectors = new ArrayList<>();
-
-        for (int m = 0; m < benchmarkSentences.size(); m++) {
-            input_vectors.add(w.getVector(benchmarkSentences.get(m), model, numFeatures));
-        }
-
-        Boolean hasMore = true;
-        int page = 1;
-        int SRs = 0;
-        while (SRs < numSRs) {
-            HttpClient client = HttpClientBuilder.create()
-                    .setDefaultRequestConfig(RequestConfig.custom()
-                            .setCookieSpec(CookieSpecs.STANDARD).build())
-                    .build();
-            HttpGet request = new HttpGet("https://api.stackexchange.com/2.2/questions?page=" + page + "&pagesize=100&order=desc&sort=activity&tagged=" + URLEncoder.encode(tags, "UTF-8") + "&site=" + site + "&filter=!--1nZwT3Ejsm&key=IT8vJtd)vD02vi1lzs5mHg((");
-
-            try {
-                HttpResponse response = client.execute(request);
-                HttpEntity entity = response.getEntity();
-
-                // Read the contents of an entity and return it as a String.
-                String content = EntityUtils.toString(entity);
-
-                JSONObject result = new JSONObject(content);
-
-                try {
-                    hasMore = result.getBoolean("has_more");
-                } catch (Exception e) {
-                }
-
-                JSONArray tokenList = new JSONArray();
-                try {
-                    tokenList = result.getJSONArray("items");
-                } catch (Exception e) {
-                }
-                if (!tokenList.isEmpty()) {
-                    for (int i = 0; i < tokenList.length(); i++) {
-                        JSONObject oj = tokenList.getJSONObject(i);
-
-                        if (SRs < numSRs) {
-                            String title = oj.getString("title");
-                            title = title.replace(";", "");
-
-                            int id = oj.getInt("question_id");
-                            int date = oj.getInt("creation_date");
-                            Date time = new Date((long) date * 1000);
-
-                            String newTime = new SimpleDateFormat("dd-MM-yyyy").format(time);
-
-                            String body = oj.getString("body");
-                            String cleanText = html2text(body);
-                            cleanText = cleanText.replace("\n", "").replace("\r", "").replace(";", "");
-
-                            List<String> postAnswers = new ArrayList<>();
-                            Boolean is_answered = oj.getBoolean("is_answered");
-                            if (getAnswers && is_answered) {
-                                int answerNumber = oj.getInt("answer_count");
-                                if (answerNumber != 0) {
-                                    JSONArray answers = oj.getJSONArray("answers");
-
-                                    for (int j = 0; j < answerNumber; j++) {
-                                        JSONObject answerObj = answers.getJSONObject(j);
-                                        String answer = answerObj.getString("body");
-                                        postAnswers.add(new Cleanup().cleanText(html2text(answer)).replace("\n", "").replace("\r", "").replace(";", ""));
-                                        if (!getAnswersWithThreshold) {
-                                            cleanText = cleanText + " " + html2text(answer);
-                                        }
-                                    }
-                                }
-                            }
-
-                            double score = getWord2VecScore(cleanText, benchmarkSentences, input_vectors, model, w, numFeatures, threshold);
-
-                            if (score >= threshold) {
-                                if (!postAnswers.isEmpty() && getAnswersWithThreshold) {
-                                    for (int p = 0; p < postAnswers.size(); p++) {
-                                        double answerScore = getWord2VecScore(postAnswers.get(p), benchmarkSentences, input_vectors, model, w, numFeatures, threshold);
-
-                                        if (answerScore >= threshold) {
-                                            cleanText = cleanText + " " + postAnswers.get(p);
-                                        }
-                                    }
-                                }
-
-                                builder.append(title + ";");
-                                builder.append(cleanText + ";");
-                                builder.append(id + ";");
-                                builder.append(newTime);
-                                if (appendScoreToCSV) {
-                                    builder.append(";" + score);
-                                }
-                                builder.append('\n');
-
-                                SRs++;
-                                System.out.println(SRs);
-                            }
-                        }
-                    }
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            if (hasMore) {
-                page++;
-            } else {
-                break;
-            }
-        }
-        pw.write(builder.toString());
-        pw.close();
-        System.out.println("done!");
+    /**
+     * @return the tfidfVectorFile
+     */
+    public String getTfidfVectorFile() {
+        return tfidfVectorFile;
     }
 
-    public static void allMethods(String newFileTfidf, String newFileWord2Vec, String newFileBoth, String benchmarkDataset, String terms, String tfidfVectorsFile, String word2vec, String site, String tags, double threshold, int numSRs, int numFeatures, boolean getAnswers, boolean getAnswersWithThreshold) throws IOException, NoSuchMethodException, IllegalAccessException, InvocationTargetException, InterruptedException {
-
-        PrintWriter pw = null;
-        try {
-            pw = new PrintWriter(new File(newFileTfidf));
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
-        builder = new StringBuilder();
-        String columnNamesList = "Title;Description;Id;Date";
-        builder.append(columnNamesList + "\n");
-
-        PrintWriter pv = null;
-        try {
-            pv = new PrintWriter(new File(newFileWord2Vec));
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
-        builder1 = new StringBuilder();
-        builder1.append(columnNamesList + "\n");
-
-        PrintWriter pd = null;
-        try {
-            pd = new PrintWriter(new File(newFileBoth));
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
-        builder2 = new StringBuilder();
-        builder2.append(columnNamesList + "\n");
-
-        TFIDFSimilarity d = new TFIDFSimilarity();
-        List<String> features = d.getTermsFromFile(terms, numFeatures);
-
-        List<String[]> docsArray = d.getDocsArrayFromCsv(benchmarkDataset);
-        List<double[]> tfidfDocsVector = d.getTFIDFVectorsFromFile(tfidfVectorsFile, numFeatures);
-        //List<double[]> tfidfDocsVector = d.tfIdfCalculator(docsArray, docsArray, features);
-
-        Word2VecSimilarity w = new Word2VecSimilarity();
-
-        Word2Vec model = w.getWord2Vec(word2vec);
-
-        List<Collection<String>> benchmarkSentences = new ArrayList<>();
-        w.getSentences(benchmarkDataset, benchmarkSentences);
-        List<INDArray> input_vectors = new ArrayList<>();
-
-        for (int m = 0; m < benchmarkSentences.size(); m++) {
-            input_vectors.add(w.getVector(benchmarkSentences.get(m), model, numFeatures));
-        }
-
-        Boolean hasMore = true;
-        int page = 1;
-        int SRsTfidf = 0;
-        int SRsWord2Vec = 0;
-        int SRsBoth = 0;
-        int SRs = 0;
-        while (SRs < numSRs) {
-            HttpClient client = HttpClientBuilder.create()
-                    .setDefaultRequestConfig(RequestConfig.custom()
-                            .setCookieSpec(CookieSpecs.STANDARD).build())
-                    .build();
-            HttpGet request = new HttpGet("https://api.stackexchange.com/2.2/questions?page=" + page + "&pagesize=100&order=desc&sort=activity&tagged=" + URLEncoder.encode(tags, "UTF-8") + "&site=" + site + "&filter=!--1nZwT3Ejsm&key=IT8vJtd)vD02vi1lzs5mHg((");
-
-            try {
-                HttpResponse response = client.execute(request);
-                HttpEntity entity = response.getEntity();
-
-                // Read the contents of an entity and return it as a String.
-                String content = EntityUtils.toString(entity);
-                //System.out.println(content);
-
-                JSONObject result = new JSONObject(content);
-
-                try {
-                    hasMore = result.getBoolean("has_more");
-                } catch (Exception e) {
-                }
-
-                JSONArray tokenList = new JSONArray();
-                try {
-                    tokenList = result.getJSONArray("items");
-                } catch (Exception e) {
-                }
-                if (!tokenList.isEmpty()) {
-                    for (int i = 0; i < tokenList.length(); i++) {
-                        JSONObject oj = tokenList.getJSONObject(i);
-
-                        if (SRs < numSRs) {
-                            String title = oj.getString("title");
-                            title = title.replace(";", "");
-
-                            int id = oj.getInt("question_id");
-                            int date = oj.getInt("creation_date");
-                            Date time = new Date((long) date * 1000);
-
-                            String newTime = new SimpleDateFormat("dd-MM-yyyy").format(time);
-
-                            String body = oj.getString("body");
-                            String cleanText = html2text(body);
-                            cleanText = cleanText.replace("\n", "").replace("\r", "").replace(";", "");
-
-                            List<String> postAnswers = new ArrayList<>();
-                            Boolean is_answered = oj.getBoolean("is_answered");
-                            if (getAnswers && is_answered) {
-                                int answerNumber = oj.getInt("answer_count");
-                                if (answerNumber != 0) {
-                                    JSONArray answers = oj.getJSONArray("answers");
-
-                                    for (int j = 0; j < answerNumber; j++) {
-                                        JSONObject answerObj = answers.getJSONObject(j);
-                                        String answer = answerObj.getString("body");
-                                        postAnswers.add(new Cleanup().cleanText(html2text(answer)).replace("\n", "").replace("\r", "").replace(";", ""));
-                                        if (!getAnswersWithThreshold) {
-                                            cleanText = cleanText + " " + html2text(answer);
-                                        }
-                                    }
-                                }
-                            }
-
-                            double tfidf = getTFIDFScore(cleanText, features, docsArray, tfidfDocsVector, d, threshold);
-
-                            double w2v = getWord2VecScore(cleanText, benchmarkSentences, input_vectors, model, w, numFeatures, threshold);
-
-                            double score = (tfidf + w2v) / 2;
-
-                            if (tfidf >= threshold && SRsTfidf < numSRs) {
-                                if (!postAnswers.isEmpty() && getAnswersWithThreshold) {
-                                    for (int p = 0; p < postAnswers.size(); p++) {
-                                        double answerScore = getTFIDFScore(postAnswers.get(p), features, docsArray, tfidfDocsVector, d, threshold);
-
-                                        if (answerScore >= threshold) {
-                                            cleanText = cleanText + " " + postAnswers.get(p);
-                                        }
-                                    }
-                                }
-
-                                builder.append(title + ";");
-                                builder.append(cleanText + ";");
-                                builder.append(id + ";");
-                                builder.append(newTime);
-                                builder.append('\n');
-
-                                SRsTfidf++;
-                            }
-
-                            if (w2v >= threshold && SRsWord2Vec < numSRs) {
-                                if (!postAnswers.isEmpty() && getAnswersWithThreshold) {
-                                    for (int p = 0; p < postAnswers.size(); p++) {
-                                        double answerScore = getWord2VecScore(postAnswers.get(p), benchmarkSentences, input_vectors, model, w, numFeatures, threshold);
-
-                                        if (answerScore >= threshold) {
-                                            cleanText = cleanText + " " + postAnswers.get(p);
-                                        }
-                                    }
-                                }
-
-                                builder1.append(title + ";");
-                                builder1.append(cleanText + ";");
-                                builder1.append(id + ";");
-                                builder1.append(newTime);
-                                builder1.append('\n');
-
-                                SRsWord2Vec++;
-                            }
-
-                            if (score >= threshold && SRsBoth < numSRs) {
-                                if (!postAnswers.isEmpty() && getAnswersWithThreshold) {
-                                    for (int p = 0; p < postAnswers.size(); p++) {
-                                        double tfidfAnswer = getTFIDFScore(postAnswers.get(p), features, docsArray, tfidfDocsVector, d, threshold);
-                                        double w2vAnswer = getWord2VecScore(postAnswers.get(p), benchmarkSentences, input_vectors, model, w, numFeatures, threshold);
-
-                                        double answerScore = (tfidfAnswer + w2vAnswer) / 2;
-                                        if (answerScore >= threshold) {
-                                            cleanText = cleanText + " " + postAnswers.get(p);
-                                        }
-                                    }
-                                }
-
-                                builder2.append(title + ";");
-                                builder2.append(cleanText + ";");
-                                builder2.append(id + ";");
-                                builder2.append(newTime);
-                                builder2.append('\n');
-
-                                SRsBoth++;
-                            }
-
-                            if(SRsTfidf == numSRs && SRsWord2Vec == numSRs && SRsBoth == numSRs){
-                                SRs = numSRs;
-                            }
-                        }
-                    }
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            if (hasMore) {
-                page++;
-            } else {
-                break;
-            }
-        }
-        pw.write(builder.toString());
-        pw.close();
-        pv.write(builder1.toString());
-        pv.close();
-        pd.write(builder2.toString());
-        pd.close();
-        System.out.println("done!");
+    /**
+     * @return the numFeaturesFactor
+     */
+    public int getNumFeaturesFactor() {
+        return numFeaturesFactor;
     }
 
-    private static double getTFIDFScore(String cleanText, List<String> features, List<String[]> docsArray, List<double[]> tfidfDocsVector, TFIDFSimilarity d, double threshold) {
-        // check cosine similarity
-        double[] cleanTextDoc = d.getDocumentVectors(cleanText, features, docsArray);
-
-        double score = 0.0;
-        double cosine = 0.0;
-        for (int k = 0; k < tfidfDocsVector.size(); k++) {
-            cosine = d.getCosineSimilarityTwoDocuments(cleanTextDoc, tfidfDocsVector.get(k));
-
-            if (cosine > score) {
-                score = cosine;
-            }
-
-            if (score >= threshold) {
-                break;
-            }
-        }
-        return score;
+    /**
+     * @return the numRecords
+     */
+    public int getNumRecords() {
+        return numRecords;
     }
 
-    private static double getWord2VecScore(String cleanText, List<Collection<String>> benchmarkSentences, List<INDArray> input_vectors, Word2Vec model, Word2VecSimilarity w, int num_features, double threshold) {
-        Collection<String> sentence = new Cleanup().normalizeText(cleanText);
-
-        double score = 0.0;
-        double cosine = 0.0;
-        for (int k = 0; k < benchmarkSentences.size(); k++) {
-            //INDArray input1_vector = w.getVector(benchmarkSentences.get(k), model);
-            INDArray input2_vector = w.getVector(sentence, model, num_features);
-
-            double dot_product = Nd4j.getBlasWrapper().dot(input_vectors.get(k), input2_vector);
-
-            cosine = w.cosine_similarity(input_vectors.get(k).toDoubleVector(), input2_vector.toDoubleVector(), dot_product);
-
-            if (cosine > score) {
-                score = cosine;
-            }
-
-            if (score >= threshold) {
-                break;
-            }
-        }
-        return score;
+    /**
+     * @return the onlyQuestion
+     */
+    public boolean isOnlyQuestion() {
+        return onlyQuestion;
     }
 
-    public static String html2text(String html) {
-        return Jsoup.parse(html).text();
+    /**
+     * @return the security
+     */
+    public boolean isSecurity() {
+        return security;
+    }
+
+    /**
+     * @return the threshold
+     */
+    public double getThreshold() {
+        return threshold;
+    }
+
+    /**
+     * @return the appendScoreToCsv
+     */
+    public boolean isAppendScoreToCsv() {
+        return appendScoreToCsv;
+    }
+
+    /**
+     * @return the questionThreshold
+     */
+    public int getQuestionThreshold() {
+        return questionThreshold;
+    }
+
+    /**
+     * @return the answerThreshold
+     */
+    public int getAnswerThreshold() {
+        return answerThreshold;
+    }
+
+    /**
+     * @return the onlyCode
+     */
+    public boolean isOnlyCode() {
+        return onlyCode;
+    }
+
+    /**
+     * @return the pathToStoreResult
+     */
+    public String getPathToStoreResult() {
+        return pathToStoreResult;
+    }
+
+    /**
+     * @return the dataWithoutSimilarity
+     */
+    public boolean isDataWithoutSimilarity() {
+        return dataWithoutSimilarity;
     }
 }
