@@ -145,11 +145,13 @@ public class SimilarityScore {
                     if(benchmarkDataset.contains("cve")) {
                         String record = benchmarks.get(n).getId() + ";" + benchmarks.get(n).getDesc() + ";" + benchmarks.get(n).getType() + ";" + benchmarks.get(n).getTypeofsource() + ";"
                                 + benchmarks.get(n).getWeakness() + ";" + benchmarks.get(n).getLink() + ";" + benchmarks.get(n).getSeverityScore() + ";" + benchmarks.get(n).getSeverity();
-                        bw.write(bug + ";" + record + "\n");
+                        bw.write(bug + ";" + score + ";" + record + "\n");
+                        System.out.println(score);
                     } else {
                         String record = benchmarks.get(n).getId() + ";" + benchmarks.get(n).getDesc() + ";" + benchmarks.get(n).getType() + ";" + benchmarks.get(n).getTypeofsource() + ";"
                                 + benchmarks.get(n).getWeakness() + ";" + benchmarks.get(n).getLink();
-                        bw.write(bug + ";" + record + "\n");
+                        bw.write(bug + ";" + score + ";" +  record + "\n");
+                        System.out.println(score);
                     }
                 }
                 score = 0.0;
