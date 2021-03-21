@@ -115,11 +115,16 @@ public class SimilarityScore {
         List<SecurityRecord> benchmarks = getRecords(benchmarkDataset);
         List<Bug> bugs = getBugs(file);
 
-        try (BufferedWriter bw = new BufferedWriter(new FileWriter("files/RQ3/SR_NSR_sources_" + source + ".csv"))) {
+        boolean writeHeader = false;
+        if (!(new File("files/RQ3/SR_NSR_sources_" + source + ".csv").isFile())) {
+            writeHeader = true;
+        }
 
-            if (benchmarkDataset.contains("cve")) {
+        try (BufferedWriter bw = new BufferedWriter(new FileWriter("files/RQ3/SR_NSR_sources_" + source + ".csv", true))) {
+
+            if ((benchmarkDataset.contains("cve") && writeHeader)) {
                 bw.write("Security;Title;Description;Id;Date;Cossim;Source;Description;Type;Type-of-source;Weakness;Link;Severity Score;Severity" + "\n");
-            } else {
+            } else if (writeHeader) {
                 bw.write("Security;Title;Description;Id;Date;Cossim;Source;Description;Type;Type-of-source;Weakness;Link" + "\n");
             }
 
@@ -136,13 +141,31 @@ public class SimilarityScore {
                         n = j;
                     }
                 }
-                String bug = bugs.get(i).getSecurity() + ";" + bugs.get(i).getTitle() + ";" + bugs.get(i).getDescription() + ";" + bugs.get(i).getId() + ";" + bugs.get(i).getDate();
+                String forum = "";
+                if (i < 200) {
+                    forum = "SO";
+                } else if (i < 300) {
+                    forum = "AU";
+                } else if (i < 400) {
+                    forum = "SE";
+                } else if (i < 500) {
+                    forum = "SF";
+                } else if (i < 700) {
+                    forum = "SO";
+                } else if (i < 800) {
+                    forum = "AU";
+                } else if (i < 900) {
+                    forum = "SE";
+                } else if (i < 1000) {
+                    forum = "SF";
+                }
+                String bug = bugs.get(i).getSecurity() + ";" + bugs.get(i).getTitle() + ";" + bugs.get(i).getDescription() + ";" + forum + "_" + bugs.get(i).getId() + ";" + bugs.get(i).getDate();
 
                 if (score == 0.0) {
                     System.out.println(bugs.get(i).getId() + " got 0.0 similarity for all documents");
                     bw.write(bug + ";No similar sources found" + "\n");
                 } else {
-                    if(benchmarkDataset.contains("cve")) {
+                    if (benchmarkDataset.contains("cve")) {
                         String record = benchmarks.get(n).getId() + ";" + benchmarks.get(n).getDesc() + ";" + benchmarks.get(n).getType() + ";" + benchmarks.get(n).getTypeofsource() + ";"
                                 + benchmarks.get(n).getWeakness() + ";" + benchmarks.get(n).getLink() + ";" + benchmarks.get(n).getSeverityScore() + ";" + benchmarks.get(n).getSeverity();
                         bw.write(bug + ";" + score + ";" + record + "\n");
@@ -150,13 +173,116 @@ public class SimilarityScore {
                     } else {
                         String record = benchmarks.get(n).getId() + ";" + benchmarks.get(n).getDesc() + ";" + benchmarks.get(n).getType() + ";" + benchmarks.get(n).getTypeofsource() + ";"
                                 + benchmarks.get(n).getWeakness() + ";" + benchmarks.get(n).getLink();
-                        bw.write(bug + ";" + score + ";" +  record + "\n");
+                        bw.write(bug + ";" + score + ";" + record + "\n");
                         System.out.println(score);
                     }
                 }
                 score = 0.0;
             }
         }
+    }
+
+    // prints the most similar report from benchmark dataset for each bug report using TFIDF and cosine similarity and prints suggested tags
+    public static void mostSimilarSourceVal(List<String[]> docsArray, List<String> terms, List<double[]> tfidfDocsVector, String benchmarkDataset, String file, String features, String source) throws IOException {
+        TFIDFSimilarity d = new TFIDFSimilarity();
+
+        List<SecurityRecord> benchmarks = getRecords(benchmarkDataset);
+        List<Bug> bugs = getVal(file);
+
+        boolean writeHeader = false;
+        if (!(new File("files/RQ2/validation/validation_" + source + ".csv").isFile())) {
+            writeHeader = true;
+        }
+
+        try (BufferedWriter bw = new BufferedWriter(new FileWriter("files/RQ2/validation/validation_" + source + ".csv", true))) {
+
+            if ((benchmarkDataset.contains("cve") && writeHeader)) {
+                if(file.contains("chromium")) {
+                    bw.write("Security;Description;Cossim;Source;Description;Type;Type-of-source;Weakness;Link;Severity Score;Severity" + "\n");
+                } else {
+                    bw.write("Security;Summary;Description;Cossim;Source;Description;Type;Type-of-source;Weakness;Link;Severity Score;Severity" + "\n");
+                }
+            } else if (writeHeader) {
+                if(file.contains("chromium")) {
+                    bw.write("Security;Description;Date;Cossim;Source;Description;Type;Type-of-source;Weakness;Link" + "\n");
+                } else {
+                    bw.write("Security;Summary;Description;Date;Cossim;Source;Description;Type;Type-of-source;Weakness;Link" + "\n");                }
+            }
+
+            double score = 0.0;
+            double cosine = 0.0;
+            int n = 0;
+            for (int i = 0; i < bugs.size(); i++) {
+                for (int j = 0; j < tfidfDocsVector.size(); j++) {
+                    cosine = d.getCosineSimilarityTwoDocuments((d.getDocumentVectors(bugs.get(i).getDescription(), terms, docsArray)), tfidfDocsVector.get(j));
+
+                    // use the highest score for each cve record
+                    if (cosine > score) {
+                        score = cosine;
+                        n = j;
+                    }
+                }
+
+                String bug = "";
+                if(file.contains("chromium")) {
+                    bug = bugs.get(i).getSecurity() + ";" + bugs.get(i).getDescription();
+                } else {
+                    bug = bugs.get(i).getSecurity() + ";" + bugs.get(i).getTitle() + ";" + bugs.get(i).getDescription();
+                }
+
+                if (score == 0.0) {
+                    System.out.println(bugs.get(i).getId() + " got 0.0 similarity for all documents");
+                    bw.write(bug + ";No similar sources found" + "\n");
+                } else {
+                    if (benchmarkDataset.contains("cve")) {
+                        String record = benchmarks.get(n).getId() + ";" + benchmarks.get(n).getDesc() + ";" + benchmarks.get(n).getType() + ";" + benchmarks.get(n).getTypeofsource() + ";"
+                                + benchmarks.get(n).getWeakness() + ";" + benchmarks.get(n).getLink() + ";" + benchmarks.get(n).getSeverityScore() + ";" + benchmarks.get(n).getSeverity();
+                        bw.write(bug + ";" + score + ";" + record + "\n");
+                        System.out.println(score);
+                    } else {
+                        String record = benchmarks.get(n).getId() + ";" + benchmarks.get(n).getDesc() + ";" + benchmarks.get(n).getType() + ";" + benchmarks.get(n).getTypeofsource() + ";"
+                                + benchmarks.get(n).getWeakness() + ";" + benchmarks.get(n).getLink();
+                        bw.write(bug + ";" + score + ";" + record + "\n");
+                        System.out.println(score);
+                    }
+                }
+                score = 0.0;
+            }
+        }
+    }
+
+    public static List<Bug> getVal(String file) {
+        List<Bug> bugs = new ArrayList<>();
+
+        int security;
+        String desc = "";
+        String date = "";
+        String line = "";
+        String title = "";
+        try (BufferedReader bw = new BufferedReader(new FileReader(file))) {
+            int i = 0;
+            while ((line = bw.readLine()) != null) {
+                if (i == 0) {
+                    i++;
+                    continue;
+                }
+                String[] cols = line.split(";");
+                if(file.contains("chromium")){
+                    desc = cols[1];
+                } else {
+                    desc = cols[2];
+                    title = cols[1];
+                }
+                security = Integer.parseInt(cols[0]);
+
+                Bug bug = new Bug(security, "", desc, title, date);
+
+                bugs.add(bug);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return bugs;
     }
 
     // prints the most similar bug report for each report in benchmark dataset using Word2Vec and cosine similarity and prints suggested tags
@@ -512,15 +638,23 @@ public class SimilarityScore {
                     continue;
                 }
                 String[] cols = line.split(";");
-                if(file.contains("cve")) {
+                if (file.contains("cve")) {
                     id = cols[0];
                     desc = cols[1];
                     type = cols[2];
                     typeofsource = cols[3];
                     weakness = cols[4];
                     link = cols[7];
-                    severityScore = cols[8];
-                    severity = cols[9];
+                    try {
+                        severityScore = cols[8];
+                    } catch (Exception e) {
+                        severityScore = "0.0";
+                    }
+                    try {
+                        severity = cols[9];
+                    } catch (Exception e ){
+                        severity = "No severity rating";
+                    }
                 } else {
                     id = cols[0];
                     desc = cols[1];
