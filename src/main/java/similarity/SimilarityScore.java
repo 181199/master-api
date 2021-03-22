@@ -661,7 +661,11 @@ public class SimilarityScore {
                     type = cols[2];
                     typeofsource = cols[3];
                     weakness = cols[4];
-                    link = cols[6];
+                    try {
+                        link = cols[6];
+                    } catch (Exception e){
+                        link = "";
+                    }
                     severityScore = "0.0";
                     severity = "";
                 }
