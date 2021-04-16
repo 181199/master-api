@@ -10,6 +10,7 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
 
+import machinelearning.utils.PropertySettings;
 import similarity.TFIDFSimilarity;
 
 
@@ -38,7 +39,7 @@ public class Utility {
         for(int i=0; i<tfidfDocsVectorCve.size(); i++) {
         	double[] vec = tfidfDocsVectorCve.get(i);
         	for(int j=0; j<vec.length; j++) {
-        		sb.append(vec[j]+";");
+        		sb.append(vec[j]+PropertySettings.SEPARATOR);
         	}
         	sb.append("\n");
         }
@@ -64,7 +65,7 @@ public class Utility {
 		int row = 0;
 		while((line=br.readLine())!=null) {	
 			
-			String[] cell = line.split(";");
+			String[] cell = line.split(PropertySettings.SEPARATOR);
 			if(num_features == 0)
 				num_features = cell.length;
 			double[] vecs = new double[num_features];

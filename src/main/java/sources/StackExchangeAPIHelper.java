@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import machinelearning.utils.PropertySettings;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
@@ -51,12 +52,12 @@ public class StackExchangeAPIHelper extends SSLConfiguration {
     public void fetchAll() throws UnsupportedEncodingException, FileNotFoundException {
 
         StringBuilder builder = new StringBuilder();
-        String columnNamesList = "Title;Description;Id;Date";
+        String columnNamesList = "Title" + PropertySettings.SEPARATOR + "Description" + PropertySettings.SEPARATOR + "Id" + PropertySettings.SEPARATOR + "Date";
 
         if(sed.isSecurity())
-            columnNamesList += ";SR";
+            columnNamesList += PropertySettings.SEPARATOR + "SR";
         else
-            columnNamesList += ";NSR";
+            columnNamesList += PropertySettings.SEPARATOR + "NSR";
 
         builder.append(columnNamesList + "\n");
 
@@ -68,7 +69,7 @@ public class StackExchangeAPIHelper extends SSLConfiguration {
             if(tags.isEmpty())
                 tags = "security";
             else
-                tags = sed.getTags()+";"+"security";
+                tags = sed.getTags()+PropertySettings.SEPARATOR+"security";
         }
         int page = 1;
         int counter = 0;
@@ -119,7 +120,14 @@ public class StackExchangeAPIHelper extends SSLConfiguration {
                     String body = "";
                     // filter: are we interested only in code
                     if(sed.isOnlyCode()) {
-                        body = oj.getString("code");
+                        body = oj.getString("body");
+                        if(body.contains("<code>")) {
+                            body = body.substring(body.indexOf("<code>") + 6);
+                            body = body.substring(0, body.indexOf("</code>"));
+                            System.out.println(body);
+                        } else {
+                            continue;
+                        }
                     } else {
                         body = oj.getString("body");
                     }
@@ -134,10 +142,10 @@ public class StackExchangeAPIHelper extends SSLConfiguration {
                         }
                     }
 
-                    builder.append(title + ";");
-                    builder.append(cleanText + ";");
-                    builder.append(id + ";");
-                    builder.append(newTime + ";");
+                    builder.append(title + PropertySettings.SEPARATOR);
+                    builder.append(cleanText + PropertySettings.SEPARATOR);
+                    builder.append(id + PropertySettings.SEPARATOR);
+                    builder.append(newTime + PropertySettings.SEPARATOR);
                     if(sed.isSecurity())
                         builder.append("SR");
                     else
@@ -229,7 +237,7 @@ public class StackExchangeAPIHelper extends SSLConfiguration {
             if(tags.isEmpty())
                 tags = "security";
             else
-                tags = sed.getTags()+";"+"security";
+                tags = sed.getTags()+","+"security";
         }
 
         while(counter <= sed.getNumRecords()) {
@@ -278,7 +286,14 @@ public class StackExchangeAPIHelper extends SSLConfiguration {
                     String body = "";
                     // filter: are we interested only in code
                     if(sed.isOnlyCode()) {
-                        body = oj.getString("code");
+                        body = oj.getString("body");
+                        if(body.contains("<code>")) {
+                            body = body.substring(body.indexOf("<code>") + 6);
+                            body = body.substring(0, body.indexOf("</code>"));
+                            System.out.println(body);
+                        } else {
+                            continue;
+                        }
                     } else {
                         body = oj.getString("body");
                     }
@@ -428,11 +443,11 @@ public class StackExchangeAPIHelper extends SSLConfiguration {
                             int id, String newTime, String method, double score, List<Map<Integer, Integer>> counters,
                             int pos) {
         StringBuilder builder = builders.get(index);
-        builder.append(title + ";");
-        builder.append(cleanText + ";");
-        builder.append(id + ";");
-        builder.append(newTime + ";");
-        builder.append(method + ";");
+        builder.append(title + PropertySettings.SEPARATOR);
+        builder.append(cleanText + PropertySettings.SEPARATOR);
+        builder.append(id + PropertySettings.SEPARATOR);
+        builder.append(newTime + PropertySettings.SEPARATOR);
+        builder.append(method + PropertySettings.SEPARATOR);
         if(sed.isAppendScoreToCsv())
             builder.append(score);
         builder.append('\n');
@@ -487,9 +502,9 @@ public class StackExchangeAPIHelper extends SSLConfiguration {
         for(int k=0; k<sed.getNumFeaturesFactor(); k++) {
             StringBuilder builder = new StringBuilder();
 
-            String columnNamesList = "Title;Description;Id;Date;Method";
+            String columnNamesList = "Title" + PropertySettings.SEPARATOR +"Description" + PropertySettings.SEPARATOR + "Id" + PropertySettings.SEPARATOR + "Date" + PropertySettings.SEPARATOR + "Method";
             if(sed.isAppendScoreToCsv())
-                columnNamesList += ";Cosinesim";
+                columnNamesList += PropertySettings.SEPARATOR + "Cosinesim";
             builder.append(columnNamesList + "\n");
 
             builders.add(builder);

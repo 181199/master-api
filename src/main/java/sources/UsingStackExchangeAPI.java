@@ -33,11 +33,11 @@ public class UsingStackExchangeAPI {
                 .sourceDataset("./files/sources/"+src+".csv")
                 .terms(terms)
                 .tfidfVectorFile("./files/features/"+src.toUpperCase()+"TFIDFFeaturesVec.csv")
-                .numFeaturesFactor(3)
+                .numFeaturesFactor(1)
                 .numRecords(1)
                 .onlyQuestion(false)
-                .security(false)
-                .threshold(0.7)
+                .security(true)
+                .threshold(0.6)
                 .appendScoreToCsv(true)
                 .pathToStoreResult("./files/experiments/")
                 .build();
@@ -47,10 +47,12 @@ public class UsingStackExchangeAPI {
         // for collecting data without using any similarity measures
 //	    StackExchangeAPI sed = new StackExchangeAPI.Builder()
 //	    		.site(StackExchangeAPI.STACKOVERFLOW)
-//	    		.numRecords(10000)
-//	    		.onlyQuestion(false)
+//	    		.numRecords(3)
+//	    		.onlyQuestion(true)
+//                .onlyCode(true)
 //	    		.security(true)
-//	    		.pathToStoreResult("/Users/tdoy/anja-master-project/api-updated/dataset")
+//                .tags("java")
+//	    		.pathToStoreResult("./files/")
 //	    		.dataWithoutSimilarity(true)
 //	    		.build();
 //

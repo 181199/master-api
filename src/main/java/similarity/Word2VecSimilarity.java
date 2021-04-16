@@ -1,12 +1,14 @@
 package similarity;
 
 import machinelearning.utils.Cleanup;
+import machinelearning.utils.PropertySettings;
 import org.deeplearning4j.models.embeddings.loader.WordVectorSerializer;
 import org.deeplearning4j.models.word2vec.Word2Vec;
 import org.deeplearning4j.text.stopwords.StopWords;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
 import org.nd4j.shade.guava.collect.Iterables;
+import org.nd4j.shade.jackson.core.sym.NameN;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,22 +25,7 @@ public class Word2VecSimilarity {
     private static Logger logger = LoggerFactory.getLogger(Word2VecSimilarity.class);
     private static StringBuilder builder;
 
-    public static void main(String[] args) throws Exception {
-
-        Word2Vec word2vec = getWord2Vec("/Users/anja/Desktop/master/api/files/features/cve_word2vec_model.txt");
-
-//        List<Collection<String>> cveSentences = new ArrayList<>();
-//        getSentences("/Users/anja/Desktop/master/api/files/testing/cveData_small.csv", cveSentences);
-//
-//        List<Collection<String>> bugSentences = new ArrayList<>();
-//        getSentences("/Users/anja/Desktop/master/api/files/testing/stackoverflowSR_small.csv", bugSentences);
-//
-//        getCosineSimilarity(cveSentences, bugSentences, word2vec);
-
-        //writeWord2Vectors("/Users/anja/Desktop/master/api/dataset/chromium_test_mod.csv", "/Users/anja/Desktop/master/api/files/validationWord2Vec/chromium_word2vec_cve.csv", word2vec);
-    }
-
-    public static void getCosineSimilarity(List<Collection<String>> cve, List<Collection<String>> bugs, Word2Vec word2vec, int vector_length) throws IOException {
+    public void getCosineSimilarity(List<Collection<String>> cve, List<Collection<String>> bugs, Word2Vec word2vec, int vector_length) throws IOException {
         List<Double> scores = new ArrayList<Double>();
         double score = 0.0;
         double cosine_sim = 0.0;
@@ -64,12 +51,12 @@ public class Word2VecSimilarity {
         appendToCsv(scores, "word2vec");
     }
 
-    public static void getSentences(String file, List<Collection<String>> sentences) throws IOException {
+    public void getSentences(String file, List<Collection<String>> sentences) throws IOException {
         try (BufferedReader br = new BufferedReader(new FileReader(file))) {
             String line = "";
             int i = 0;
             while ((line = br.readLine()) != null) {
-                String[] cols = line.split(";");
+                String[] cols = line.split(PropertySettings.SEPARATOR);
                 String cleaned = new Cleanup().cleanText(cols[1]);
 
                 if(i != 0) {
@@ -81,7 +68,7 @@ public class Word2VecSimilarity {
         }
     }
 
-    public static Word2Vec getWord2Vec(String path) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+    public Word2Vec getWord2Vec(String path) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         File file = new File(path);
         Method method = WordVectorSerializer.class.getDeclaredMethod("readWord2VecModel", File.class);
         method.setAccessible(true);
@@ -89,7 +76,7 @@ public class Word2VecSimilarity {
         return word2vec;
     }
 
-    public static void writeWord2Vectors(String infile, String outfile, Word2Vec word2vec, int vector_length) {
+    public void writeWord2Vectors(String infile, String outfile, Word2Vec word2vec, int vector_length) {
 
         try(BufferedWriter bw = new BufferedWriter(new FileWriter(outfile))){
 
@@ -98,8 +85,13 @@ public class Word2VecSimilarity {
                 int index = 0;
                 while((line=br.readLine())!=null) {
 
-                    String[] toks = line.split(";");
-                    Collection<String> tokens = new Cleanup().normalizeText(toks[1] + " " + toks[2]);
+                    String[] toks = line.split(PropertySettings.SEPARATOR);
+                    Collection<String> tokens = null;
+                    if(infile.contains("chromium")) {
+                        tokens = new Cleanup().normalizeText(toks[1]);
+                    } else {
+                        tokens = new Cleanup().normalizeText(toks[1] + " " + toks[2]);
+                    }
                     INDArray invector = getVector(tokens, word2vec, vector_length);
 
                     String rowvecpluslabel = getWordVectorsAndLabel(invector, index);
@@ -117,21 +109,21 @@ public class Word2VecSimilarity {
         }
     }
 
-    private static String getWordVectorsAndLabel(INDArray vec, int index) {
+    private String getWordVectorsAndLabel(INDArray vec, int index) {
 
         String rowvecs = "";
         for(int i=0; i<vec.columns()-1; i++) {
             NumberFormat nf = NumberFormat.getInstance(new Locale("en", "US"));
             nf.setMaximumFractionDigits(6);
             String val = nf.format(vec.getRow(0).getDouble(i));
-            rowvecs += val+";";
+            rowvecs += val+PropertySettings.SEPARATOR;
         }
 
         return rowvecs;
 
     }
 
-    public static INDArray getVector(Collection<String> labels, Word2Vec word2Vec, int vector_length){
+    public INDArray getVector(Collection<String> labels, Word2Vec word2Vec, int vector_length){
         double sentence_vector[] = new double[vector_length];
         // initializing the vector
         Arrays.fill(sentence_vector,0d);
@@ -139,8 +131,18 @@ public class Word2VecSimilarity {
         for(String word: labels)
         {
             try {
+                boolean skip = false;
                 // make vector embeddings for a one word at a time
                 double[] word_vec = word2Vec.getWordVector(word);
+                for(double str : word_vec) {
+                    if (Double.isNaN(str) || Double.isInfinite(str)){
+                        skip = true;
+                    }
+                }
+
+                if(skip){
+                    continue;
+                }
                 //System.out.println("word_vec_len: " + word_vec.length);
                 // array sum of vectors
                 if (word_vec != null) {
@@ -148,7 +150,7 @@ public class Word2VecSimilarity {
                 }
                 ++i;
             } catch (Exception e){
-                System.out.println("Exception: " + word);
+                //System.out.println("Exception: " + word);
             }
         }
 
@@ -156,7 +158,7 @@ public class Word2VecSimilarity {
         return Nd4j.create(double_array_avg(sentence_vector, i));
     }
 
-    public static double cosine_similarity(double[] input1_vector, double[] input2_vector, double dot_product)
+    public double cosine_similarity(double[] input1_vector, double[] input2_vector, double dot_product)
     {
         double norm_a = 0.0;
         double norm_b = 0.0;
@@ -170,7 +172,7 @@ public class Word2VecSimilarity {
         return cosine_sim;
     }
 
-    public static double[] double_array_sum(double[] word_vec, double[] sentence_vector){
+    public double[] double_array_sum(double[] word_vec, double[] sentence_vector){
         double[] sum = new double[word_vec.length];
 
         for (int i = 0; i < word_vec.length; i++) {
@@ -179,7 +181,7 @@ public class Word2VecSimilarity {
         return sum;
     }
 
-    public static double[] double_array_avg(double[] sentence_vector, int size){
+    public double[] double_array_avg(double[] sentence_vector, int size){
         double[] avg = new double[sentence_vector.length];
         for (int i=0; i < avg.length; i++) {
             avg[i] = sentence_vector[i] / size;
@@ -187,7 +189,7 @@ public class Word2VecSimilarity {
         return avg;
     }
 
-    public static void appendToCsv(List<Double> cosineScores, String columnName) throws IOException {
+    public void appendToCsv(List<Double> cosineScores, String columnName) throws IOException {
 
         BufferedReader br=null;
         BufferedWriter bw=null;
@@ -204,10 +206,10 @@ public class Word2VecSimilarity {
             int i = 0;
             while ((line = br.readLine()) != null && i < cosineScores.size()) {
                 if(i == 0){
-                    bw.write(line + ";" + columnName + "\n");
+                    bw.write(line + PropertySettings.SEPARATOR + columnName + "\n");
                 } else {
                     String addedColumn = String.valueOf(cosineScores.get(i));
-                    bw.write(line + ";" + addedColumn + "\n");
+                    bw.write(line + PropertySettings.SEPARATOR + addedColumn + "\n");
                 }
                 i++;
             }

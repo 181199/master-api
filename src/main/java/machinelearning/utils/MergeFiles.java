@@ -6,18 +6,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class MergeFiles {
-
-    public static void main(String[] args) throws IOException {
-        //addSecurityLabel("files/experiments/stackoverflowThreshold/stackoverflow_NSR.csv", "files/experiments/stackoverflowThreshold/stackoverflowNSR.csv", false);
-        //addSecurityLabel("files/experiments/stackoverflowThreshold/stackoverflow_SR.csv", "files/experiments/stackoverflowThreshold/stackoverflowSR.csv", true);
-
-        List<Path> paths = Arrays.asList(Paths.get("./files/experiments/tfidf/stackoverflow_CVE/stackoverflowSR.csv"), Paths.get("./files/experiments/stackoverflowNSR.csv"));
-        List<String> mergedLines = getMergedLines(paths);
-        Path target = Paths.get("files/experiments/tfidf/stackoverflow_CVE/stackoverflow_CVE.csv");
-        Files.write(target, mergedLines, Charset.forName("UTF-8"));
-    }
 
     public static void merge(String file1, String file2, String newFile) throws IOException {
         List<Path> paths = Arrays.asList(Paths.get(file1), Paths.get(file2));
@@ -56,13 +48,13 @@ public class MergeFiles {
             String line = "";
             int i = 0;
             while ((line = br.readLine()) != null) {
-                String[] cols = line.split(";");
+                String[] cols = line.split(PropertySettings.SEPARATOR);
 
                 if(i == 0){
                     // add column for security report (1 = security, 0 != security)
-                    bw.write("Security;" + cols[0] + ";" + cols[1] + ";" + cols[2] + ";" + cols[3] + "\n");
+                    bw.write("Security" + PropertySettings.SEPARATOR + cols[0] + PropertySettings.SEPARATOR + cols[1] + PropertySettings.SEPARATOR + cols[2] + PropertySettings.SEPARATOR + cols[3] + "\n");
                 } else {
-                    bw.write(sec + ";" + cols[0] + ";" + cols[1] + ";" + cols[2] + ";" + cols[3] + "\n");
+                    bw.write(sec + PropertySettings.SEPARATOR + cols[0] + PropertySettings.SEPARATOR + cols[1] + PropertySettings.SEPARATOR + cols[2] + PropertySettings.SEPARATOR + cols[3] + "\n");
                 }
                 i++;
             }
@@ -73,6 +65,42 @@ public class MergeFiles {
                 br.close();
             if (bw != null)
                 bw.close();
+        }
+    }
+
+    public static void fixWord2VecFiles(String directory){
+        try (Stream<Path> walk = Files.walk(Paths.get(directory))) {
+
+            List<String> result = walk.filter(Files::isRegularFile)
+                    .map(x -> x.toString()).collect(Collectors.toList());
+
+            result.forEach(System.out::println);
+
+                for (int i = 0; i < result.size(); i++) {
+
+                    if ((result.get(i).contains("chromium") && !result.get(i).contains("fixed"))) {
+
+                        try (BufferedReader br = new BufferedReader(new FileReader(result.get(i)))) {
+                            String file = result.get(i);
+                            String newFile = file.substring(0, file.length()-4) + "_fixed.csv";
+
+                            try (BufferedWriter bw = new BufferedWriter(new FileWriter(newFile, false))) {
+
+                                //System.out.println("\ufffd");
+
+                                String line = "";
+                                while ((line = br.readLine()) != null) {
+                                    String newLine = line.replace("\ufffd", "0.0");
+                                    bw.write(newLine + "\n");
+                                }
+                            }
+                        }
+                    }
+                }
+
+
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 }

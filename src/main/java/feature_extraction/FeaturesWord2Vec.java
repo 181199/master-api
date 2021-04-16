@@ -1,5 +1,7 @@
 package feature_extraction;
 
+import machinelearning.utils.Cleanup;
+import machinelearning.utils.PropertySettings;
 import org.deeplearning4j.models.embeddings.loader.WordVectorSerializer;
 import org.deeplearning4j.models.word2vec.Word2Vec;
 import org.deeplearning4j.text.sentenceiterator.BasicLineIterator;
@@ -26,16 +28,16 @@ public class FeaturesWord2Vec {
     private static StringBuilder builder;
 
     public static void main(String[] args) throws Exception {
-        String file = "/Users/anja/Desktop/master/api/files/sources/capec.csv";
+        String file = "/Users/anja/Desktop/master/api/files/sources/cve.csv";
 
-        createWord2VecModel(file,"./files/capec_word2vec_model.txt", 1, 100, 100, 42, 5);
+        createWord2VecModel(file,"./files/cve_word2vec_model.txt", 1, 100, 100, 42, 5);
 
-        saveWordsToFile("/Users/anja/Desktop/master/api/files/features/capec_word2vec_model.txt", "/Users/anja/Desktop/master/api/files/features/CAPECFeaturesWord2Vec.txt", 200);
+        //saveWordsToFile("/Users/anja/Desktop/master/api/files/features/cve_word2vec_model.txt", "/Users/anja/Desktop/master/api/files/features/cveFeaturesWord2Vec.txt", 200);
     }
 
     public static void createWord2VecModel(String file, String modelFile, int minWordFrequency, int iterations, int layerSize, int seed, int windowSize) throws FileNotFoundException {
-        createCleanedTextFile(file, "./files/sentences_capec.txt");
-        String filePath = new File(dataLocalPath,"./files/sentences_capec.txt").getAbsolutePath();
+        createCleanedTextFile(file, "./files/sentences_cleaned.txt");
+        String filePath = new File(dataLocalPath,"./files/sentences_cleaned.txt").getAbsolutePath();
 
         log.info("Load & Vectorize Sentences....");
         // Strip white space before and after for each line
@@ -72,8 +74,8 @@ public class FeaturesWord2Vec {
             try(BufferedReader br = new BufferedReader(new FileReader(infile))){
                 String line = "";
                 while((line=br.readLine())!=null) {
-                    String[] cols = line.split(";");
-                    String cleaned = cleanText(cols[1]);
+                    String[] cols = line.split(PropertySettings.SEPARATOR);
+                    String cleaned = new Cleanup().cleanText(cols[1]);
                     bw.write(cleaned+"\n");
                 }
 
@@ -110,19 +112,5 @@ public class FeaturesWord2Vec {
 
         pw.write(builder.toString());
         pw.close();
-    }
-
-    // use the same text cleaning function as above for creating our word2vec dataset for the NN
-    public static String cleanText(String text){
-        Pattern charsPunctuationPattern = Pattern.compile("[\\d:,\"\'\\`\\_\\|?!\n\r@;]+");
-        String input_text = charsPunctuationPattern.matcher(text.trim().toLowerCase()).replaceAll("");
-        input_text = input_text.replaceAll("\\{.*?\\}", "");
-        input_text = input_text.replaceAll("\\[.*?\\]", "");
-        input_text = input_text.replaceAll("\\(.*?\\)", "");
-        input_text = input_text.replaceAll("[^A-Za-z0-9(),!?@\'\\`\"\\_\n]", " ");
-        input_text = input_text.replaceAll("[/]"," ");
-        input_text = input_text.trim().replaceAll(" +", " ");
-
-        return input_text;
     }
 }

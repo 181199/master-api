@@ -1,6 +1,6 @@
 package machinelearning;
 
-import java.io.IOException;
+import java.io.*;
 import java.lang.reflect.InvocationTargetException;
 
 public class Classifier {
@@ -23,6 +23,20 @@ public class Classifier {
     private int indexLabel;
     private int classesCount;
     private int featureCount;
+    private boolean printPreds;
+    private String datasetFileCsv;
+    private int datasetSize;
+
+    private double recall;
+    private double precision;
+    private double fmeasure;
+    private double gmeasure;
+    private double pf;
+    private double aucroc;
+    private double TP;
+    private double TN;
+    private double FP;
+    private double FN;
 
     public static class Builder {
 
@@ -33,10 +47,24 @@ public class Classifier {
         private String saveModelPath;
         private boolean createModel = false;
         private int numFolds = 5;
-        private boolean stem;
+        private boolean stem = false;
         private int indexLabel = 99;
         private int classesCount = 2;
         private int featureCount = 99;
+        private boolean printPreds = false;
+        private String datasetFileCsv;
+        private int datasetSize;
+
+        private double recall;
+        private double precision;
+        private double fmeasure;
+        private double gmeasure;
+        private double pf;
+        private double aucroc;
+        private double TP;
+        private double TN;
+        private double FP;
+        private double FN;
 
         public Builder(){
 
@@ -97,6 +125,16 @@ public class Classifier {
             return this;
         }
 
+        public Builder printPreds(boolean printPreds) {
+            this.printPreds = printPreds;
+            return this;
+        }
+
+        public Builder datasetFileCsv(String datasetFileCsv) {
+            this.datasetFileCsv = datasetFileCsv;
+            return this;
+        }
+
         public Classifier build() {
 
             Classifier classifier = new Classifier();
@@ -111,6 +149,8 @@ public class Classifier {
             classifier.indexLabel = this.indexLabel;
             classifier.classesCount = this.classesCount;
             classifier.featureCount = this.featureCount;
+            classifier.printPreds = this.printPreds;
+            classifier.datasetFileCsv = this.datasetFileCsv;
 
             return classifier;
         }
@@ -129,10 +169,14 @@ public class Classifier {
                     cl.createModel();
                 }
             else {
-                if(this.learner.equals(Classifier.CNN)){
-                    cl.classifyCNN();
+                if(printPreds){
+                    cl.classifyAndPrint();
                 } else {
-                    cl.classify();
+                    if (this.learner.equals(Classifier.CNN)) {
+                        cl.classifyCNN();
+                    } else {
+                        cl.classify();
+                    }
                 }
             }
         } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException | IOException e) {
@@ -226,5 +270,119 @@ public class Classifier {
 
     public void setFeatureCount(int featureCount) {
         this.featureCount = featureCount;
+    }
+
+    public double getRecall() {
+        return recall;
+    }
+
+    public void setRecall(double recall) {
+        this.recall = recall;
+    }
+
+    public double getPrecision() {
+        return precision;
+    }
+
+    public void setPrecision(double precision) {
+        this.precision = precision;
+    }
+
+    public double getFmeasure() {
+        return fmeasure;
+    }
+
+    public void setFmeasure(double fmeasure) {
+        this.fmeasure = fmeasure;
+    }
+
+    public double getGmeasure() {
+        return gmeasure;
+    }
+
+    public void setGmeasure(double gmeasure) {
+        this.gmeasure = gmeasure;
+    }
+
+    public double getPf() {
+        return pf;
+    }
+
+    public void setPf(double pf) {
+        this.pf = pf;
+    }
+
+    public double getAucroc() {
+        return aucroc;
+    }
+
+    public void setAucroc(double aucroc) {
+        this.aucroc = aucroc;
+    }
+
+    public double getTP() {
+        return TP;
+    }
+
+    public void setTP(double TP) {
+        this.TP = TP;
+    }
+
+    public double getTN() {
+        return TN;
+    }
+
+    public void setTN(double TN) {
+        this.TN = TN;
+    }
+
+    public double getFP() {
+        return FP;
+    }
+
+    public void setFP(double FP) {
+        this.FP = FP;
+    }
+
+    public double getFN() {
+        return FN;
+    }
+
+    public void setFN(double FN) {
+        this.FN = FN;
+    }
+
+    public boolean isPrintPreds() {
+        return printPreds;
+    }
+
+    public void setPrintPreds(boolean printPreds) {
+        this.printPreds = printPreds;
+    }
+
+    public String getDatasetFileCsv() {
+        return datasetFileCsv;
+    }
+
+    public void setDatasetFileCsv(String datasetFileCsv) {
+        this.datasetFileCsv = datasetFileCsv;
+    }
+
+    public int getDatasetSize() throws FileNotFoundException {
+        int i = 0;
+        try (BufferedReader br = new BufferedReader(new FileReader(dataset))) {
+
+            while ((br.readLine()) != null) {
+                i++;
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return i;
+    }
+
+    public void setDatasetSize(int datasetSize) {
+        this.datasetSize = datasetSize;
     }
 }

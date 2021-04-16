@@ -16,6 +16,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import machinelearning.utils.PropertySettings;
 import weka.core.stemmers.SnowballStemmer;
 import weka.core.stemmers.Stemmer;
 
@@ -62,10 +63,10 @@ public class FeaturesTFIDF {
             line = line.toLowerCase().trim();
 
             if (onlysecurityterms) {
-                String[] cols = line.split(";"); // this is separated by semicolon
+                String[] cols = line.split(PropertySettings.SEPARATOR); // this is separated by semicolon
                 String sec = cols[1].trim();
                 line = filterStrings(sec);
-                System.out.println(line);
+                //System.out.println(line);
                 documents.add(line);
             } else {
                 line = getOnlyStrings(line);
@@ -226,15 +227,33 @@ public class FeaturesTFIDF {
         return terms;
     }
 
+    public static void createFeatureFile(String datafile, String stopfile, String dictfile, int numFeatures) throws IOException {
+        FeaturesTFIDF tfidf = new FeaturesTFIDF();
+
+        List<String> stops = tfidf.readStopwords(stopfile);
+        tfidf.readData(datafile, true);
+        tfidf.tokenize(stops);
+
+        tfidf.computeAggregateTFIDF();
+
+        List<String> features = tfidf.getFeatures(numFeatures);
+
+        PrintWriter pw = new PrintWriter(dictfile);
+        for(int i = 0; i < features.size(); i++){
+            pw.append(features.get(i) + "\n");
+        }
+        pw.close();
+    }
+
     /**
      * @param args
      * @throws Exception
      */
     public static void main(String[] args) throws Exception {
 
-        String datafile = "/Users/anja/Desktop/master/api/files/sources/cve.csv";
+        String datafile = "/Users/anja/Desktop/master/api/files/sources/capec.csv";
         String stopfile = "/Users/anja/Desktop/master/api/files/stopwords.txt";
-        String dictfile = "/Users/anja/Desktop/master/api/files/features/CVEFeaturesTFIDF500.txt";
+        String dictfile = "/Users/anja/Desktop/master/api/files/features/CAPECFeaturesTFIDF500.txt";
 
         FeaturesTFIDF tfidf = new FeaturesTFIDF();
 
@@ -251,9 +270,6 @@ public class FeaturesTFIDF {
             pw.append(features.get(i) + "\n");
         }
         pw.close();
-        System.out.println(features.size());
-
-        System.out.println(features);
 
     }
 }

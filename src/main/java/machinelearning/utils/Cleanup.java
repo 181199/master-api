@@ -32,6 +32,7 @@ public class Cleanup {
         input_text = input_text.replaceAll("\\(.*?\\)", "");
         input_text = input_text.replaceAll("[^A-Za-z0-9(),!?@\'\\`\"\\_\n]", " ");
         input_text = input_text.replaceAll("[/]"," ");
+        input_text = input_text.replaceAll("  "," ");
 
         return input_text;
     }

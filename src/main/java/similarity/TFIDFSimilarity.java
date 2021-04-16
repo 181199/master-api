@@ -1,6 +1,7 @@
 package similarity;
 
 import machinelearning.utils.Cleanup;
+import machinelearning.utils.PropertySettings;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -23,7 +24,7 @@ public class TFIDFSimilarity {
             String line = "";
             int i = 0;
             while ((line = br.readLine()) != null) {
-                String[] cols = line.split(";");
+                String[] cols = line.split(PropertySettings.SEPARATOR);
                 String cleaned = new Cleanup().cleanText(cols[1]);
 
                 if(i != 0) {
@@ -261,7 +262,7 @@ public class TFIDFSimilarity {
             int i = 0;
             while ((line = br.readLine()) != null && i < tfidfScores.size()) {
                 if(i == 0){
-                    bw.write(line + ";" + columnName + "\n");
+                    bw.write(line + PropertySettings.SEPARATOR + columnName + "\n");
                 } else {
                     String addedColumn = String.valueOf(tfidfScores.get(i));
                     bw.write(line + addedColumn + "\n");

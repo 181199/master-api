@@ -4,6 +4,8 @@
 package sources;
 
 
+import machinelearning.utils.PropertySettings;
+
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.List;
@@ -47,7 +49,7 @@ public class StackExchangeAPI {
 
         private String tags = "";
         private String site = "stackoverflow";
-        private String api = "https://api.stackexchange.com/2.2/questions";		// must also think of being able to configure an access key
+        private String api = "https://api.stackexchange.com/" + PropertySettings.STACKEXCHANGE + "/questions";		// must also think of being able to configure an access key
         private String key = "IT8vJtd)vD02vi1lzs5mHg((";
         private String source;
         private String sourceDataset;

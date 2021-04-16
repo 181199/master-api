@@ -2,9 +2,16 @@ package sources;
 
 import com.gargoylesoftware.htmlunit.WebClient;
 import com.gargoylesoftware.htmlunit.html.*;
+import machinelearning.utils.PropertySettings;
+import org.jsoup.Connection;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.URLEncoder;
 import java.text.DecimalFormat;
@@ -29,7 +36,9 @@ public class CrawlerHelper {
         }
 
         builder = new StringBuilder();
-        String columnNamesList = "CVE_ID;Description;Type;Type-of-source;Weakness;Date;Source;Reference;Score;Severity";
+        String columnNamesList = "CVE_ID" + PropertySettings.SEPARATOR + "Description" + PropertySettings.SEPARATOR + "Type" + PropertySettings.SEPARATOR +
+                "Type-of-source" + PropertySettings.SEPARATOR + "Weakness" + PropertySettings.SEPARATOR + "Date" + PropertySettings.SEPARATOR + "Source" + PropertySettings.SEPARATOR + "Reference"
+                + PropertySettings.SEPARATOR + "Score" + PropertySettings.SEPARATOR + "Severity";
         builder.append(columnNamesList + "\n");
 
         WebClient client = new WebClient();
@@ -124,15 +133,15 @@ public class CrawlerHelper {
                 //System.out.println("   CVE-link: " + "https://cve.mitre.org/cgi-bin/cvename.cgi?name=" + id);
                 //System.out.println();
 
-                builder.append(id + ";");
-                builder.append(desc.asText() + ";");
-                builder.append("Vulnerability" + ";");
-                builder.append("Vulnerability Database" + ";");
-                builder.append(weak + ";");
-                builder.append(dateText.asText() + ";");
-                builder.append(sourceText.asText() + ";");
-                builder.append("https://cve.mitre.org/cgi-bin/cvename.cgi?name=" + id + ";");
-                builder.append(score + ";");
+                builder.append(id + PropertySettings.SEPARATOR);
+                builder.append(desc.asText() + PropertySettings.SEPARATOR);
+                builder.append("Vulnerability" + PropertySettings.SEPARATOR);
+                builder.append("Vulnerability Database" + PropertySettings.SEPARATOR);
+                builder.append(weak + PropertySettings.SEPARATOR);
+                builder.append(dateText.asText() + PropertySettings.SEPARATOR);
+                builder.append(sourceText.asText() + PropertySettings.SEPARATOR);
+                builder.append("https://cve.mitre.org/cgi-bin/cvename.cgi?name=" + id + PropertySettings.SEPARATOR);
+                builder.append(score + PropertySettings.SEPARATOR);
                 builder.append(severityText);
                 builder.append('\n');
 
@@ -154,7 +163,8 @@ public class CrawlerHelper {
             e.printStackTrace();
         }
         builder = new StringBuilder();
-        String columnNamesList = "CWE_ID;Description;Type;Type-of-source;Weakness;Date;Source";
+        String columnNamesList = "CWE_ID" + PropertySettings.SEPARATOR + "Description" + PropertySettings.SEPARATOR + "Type" + PropertySettings.SEPARATOR +
+                "Type-of-source" + PropertySettings.SEPARATOR + "Weakness" + PropertySettings.SEPARATOR + "Date" + PropertySettings.SEPARATOR + "Source";
         builder.append(columnNamesList + "\n");
 
         WebClient client = new WebClient();
@@ -218,15 +228,15 @@ public class CrawlerHelper {
                 final HtmlTableDataCell dateText = date.get(0);
                 System.out.println("   Date: " + dateText.asText());
 
-                System.out.println("   CWE-link: " + "https://cve.mitre.org/cgi-bin/cvename.cgi?name=" + id);
+                System.out.println("   CWE-link: " + "https://cwe.mitre.org/data/definitions/" + id);
                 System.out.println();
 
-                builder.append(id + ";");
-                builder.append(desc.asText().replace("\n", " ") +";");
-                builder.append("Vulnerability" + ";");
-                builder.append("Vulnerability Database" + ";");
-                builder.append(weaknessText + ";");
-                builder.append(dateText.asText() + ";");
+                builder.append(id + PropertySettings.SEPARATOR);
+                builder.append(desc.asText().replace("\n", " ") + PropertySettings.SEPARATOR);
+                builder.append("Vulnerability" + PropertySettings.SEPARATOR);
+                builder.append("Vulnerability Database" + PropertySettings.SEPARATOR);
+                builder.append(weaknessText + PropertySettings.SEPARATOR);
+                builder.append(dateText.asText() + PropertySettings.SEPARATOR);
                 builder.append("https://cwe.mitre.org/data/definitions/" + id);
                 builder.append('\n');
 
@@ -248,7 +258,8 @@ public class CrawlerHelper {
             e.printStackTrace();
         }
         builder = new StringBuilder();
-        String columnNamesList = "CAPEC_ID;Description;Type;Type-of-source;Weakness;Date;Source";
+        String columnNamesList = "CAPEC_ID" + PropertySettings.SEPARATOR + "Description" + PropertySettings.SEPARATOR + "Type" + PropertySettings.SEPARATOR +
+                "Type-of-source" + PropertySettings.SEPARATOR + "Weakness" + PropertySettings.SEPARATOR + "Date" + PropertySettings.SEPARATOR + "Source";
         builder.append(columnNamesList + "\n");
 
         WebClient client = new WebClient();
@@ -303,16 +314,16 @@ public class CrawlerHelper {
                 final DomText dateText = date.get(0);
                 System.out.println("   Date: " + dateText.asText());
 
-                System.out.println("   CAPEC-link: " + "https://cve.mitre.org/cgi-bin/cvename.cgi?name=" + id);
+                System.out.println("   CAPEC-link: " + "https://capec.mitre.org/data/definitions/" + id + ".html");
                 System.out.println();
 
-                builder.append(id + ";");
-                builder.append(desc.asText().replace("\n", " "));
-                builder.append("Vulnerability" + ";");
-                builder.append("Vulnerability Database" + ";");
-                builder.append(weaknessText + ";");
-                builder.append(dateText.asText() + ";");
-                builder.append("https://cwe.mitre.org/data/definitions/" + id);
+                builder.append(id + PropertySettings.SEPARATOR);
+                builder.append(desc.asText().replace("\n", " ") + PropertySettings.SEPARATOR);
+                builder.append("Vulnerability" + PropertySettings.SEPARATOR);
+                builder.append("Vulnerability Database" + PropertySettings.SEPARATOR);
+                builder.append(weaknessText + PropertySettings.SEPARATOR);
+                builder.append(dateText.asText() + PropertySettings.SEPARATOR);
+                builder.append("https://capec.mitre.org/data/definitions/" + id + ".html");
                 builder.append('\n');
 
                 number++;
@@ -320,6 +331,67 @@ public class CrawlerHelper {
             } catch (Exception e) {
                 e.printStackTrace();
             }
+        }
+        pw.write(builder.toString());
+        pw.close();
+    }
+
+    public void queryProgramcreek() throws IOException {
+
+        PrintWriter pw = null;
+        try {
+            pw = new PrintWriter(new File(crawler.getNewFile()));
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+
+        builder = new StringBuilder();
+        String columnNamesList = "Title" + PropertySettings.SEPARATOR + "Code";
+        builder.append(columnNamesList + "\n");
+
+        String url = "";
+
+        if(crawler.getCodeLanguage().equals(Crawler.CPP)){
+            url = "https://www.programcreek.com/" + URLEncoder.encode(crawler.getCodeLanguage(), "UTF-8") + "/?CodeExample=" + URLEncoder.encode(crawler.getTags(), "UTF-8") + "&submit=Search&action=search_nlp&isExample=yes";
+        } else {
+            url = "https://www.programcreek.com/" + URLEncoder.encode(crawler.getCodeLanguage(), "UTF-8") + "/?action=search&ClassName=" + URLEncoder.encode(crawler.getTags(), "UTF-8") + "&submit=Search";
+        }
+
+        Document doc = Jsoup.connect(url).get();
+
+        Elements t = doc.select("#main > h1");
+        String header = t.text();
+
+        if(!header.contains("Example") || !header.contains("Examples")) {
+
+            Element content = doc.getElementById("api-list");
+            Elements links = content.getElementsByTag("a");
+
+            for (int i = 0; i < crawler.getNumQueries(); i++) {
+                if (i > links.size()) {
+                    break;
+                }
+                String linkText = links.get(i).text();
+
+                Document doc2 = Jsoup.connect("https://www.programcreek.com/" + URLEncoder.encode(crawler.getCodeLanguage(), "UTF-8") + "/" + linkText).get();
+
+                Elements tl = doc2.select("#main > h1 > span");
+                String title = tl.text();
+
+                Elements codebox = doc2.getElementsByClass("exampleboxbody");
+                for (int j = 0; j < codebox.size(); j++) {
+                    builder.append(title + PropertySettings.SEPARATOR);
+                    builder.append(codebox.get(j).text().replace("\n", " ") + PropertySettings.SEPARATOR + "\n");
+                }
+            }
+        } else {
+                String title = crawler.getCodeLanguage() + "_" + crawler.getTags();
+
+                Elements codebox = doc.getElementsByClass("exampleboxbody");
+                for (int j = 0; j < codebox.size(); j++) {
+                    builder.append(title + PropertySettings.SEPARATOR);
+                    builder.append(codebox.get(j).text().replace("\n", " ") + PropertySettings.SEPARATOR + "\n");
+                }
         }
         pw.write(builder.toString());
         pw.close();

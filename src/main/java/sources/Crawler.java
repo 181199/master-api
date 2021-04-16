@@ -1,15 +1,24 @@
 package sources;
 
+import java.io.IOException;
+
 public class Crawler {
 
     public static final String CVE = "CVE";
     public static final String CWE = "CWE";
     public static final String CAPEC = "CAPEC";
+    public static final String PROGRAMCREEK = "PROGRAMCREEK";
+    public static final String JAVA = "java-api-examples";
+    public static final String CPP = "cpp";
+    //public static final String PYTHON = "python";
+    public static final String SCALA = "scala";
 
     private String source;
     private String newFile;
     private int numQueries;
     private int year;
+    private String tags;
+    private String codeLanguage;
 
     public static class Builder {
 
@@ -17,6 +26,8 @@ public class Crawler {
         private String newFile;
         private int numQueries = 100;
         private int year = 2020;
+        private String tags;
+        private String codeLanguage;
 
         public Builder(){
         }
@@ -41,12 +52,25 @@ public class Crawler {
             return this;
         }
 
+        public Builder tags(String tags) {
+            this.tags = tags;
+            return this;
+        }
+
+        public Builder codeLanguage(String codeLanguage) {
+            this.codeLanguage = codeLanguage;
+            return this;
+        }
+
         public Crawler build() {
             Crawler crawler = new Crawler();
             crawler.source = this.source;
             crawler.newFile = this.newFile;
             crawler.numQueries = this.numQueries;
             crawler.year = this.year;
+            crawler.tags = this.tags;
+            crawler.codeLanguage = this.codeLanguage;
+
 
             return crawler;
         }
@@ -54,7 +78,7 @@ public class Crawler {
 
     private Crawler(){}
 
-    public void run() {
+    public void run() throws IOException {
         CrawlerHelper ch = new CrawlerHelper(this);
         if (this.source.equals(Crawler.CVE)) {
             ch.queryCVE();
@@ -62,6 +86,8 @@ public class Crawler {
             ch.queryCWE();
         } else if (this.source.equals(Crawler.CAPEC)) {
             ch.queryCAPEC();
+        } else if (this.source.equals(Crawler.PROGRAMCREEK)){
+            ch.queryProgramcreek();
         }
     }
 
@@ -95,5 +121,21 @@ public class Crawler {
 
     public void setYear(int year) {
         this.year = year;
+    }
+
+    public String getTags() {
+        return tags;
+    }
+
+    public void setTags(String tags) {
+        this.tags = tags;
+    }
+
+    public String getCodeLanguage() {
+        return codeLanguage;
+    }
+
+    public void setCodeLanguage(String codeLanguage) {
+        this.codeLanguage = codeLanguage;
     }
 }
