@@ -52,9 +52,9 @@ public class MergeFiles {
 
                 if(i == 0){
                     // add column for security report (1 = security, 0 != security)
-                    bw.write("Security" + PropertySettings.SEPARATOR + cols[0] + PropertySettings.SEPARATOR + cols[1] + PropertySettings.SEPARATOR + cols[2] + PropertySettings.SEPARATOR + cols[3] + "\n");
+                    bw.write("Security" + PropertySettings.SEPARATOR + line + "\n");
                 } else {
-                    bw.write(sec + PropertySettings.SEPARATOR + cols[0] + PropertySettings.SEPARATOR + cols[1] + PropertySettings.SEPARATOR + cols[2] + PropertySettings.SEPARATOR + cols[3] + "\n");
+                    bw.write(sec + PropertySettings.SEPARATOR + line + "\n");
                 }
                 i++;
             }

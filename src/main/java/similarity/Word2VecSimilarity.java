@@ -172,7 +172,7 @@ public class Word2VecSimilarity {
         return cosine_sim;
     }
 
-    public double[] double_array_sum(double[] word_vec, double[] sentence_vector){
+    private double[] double_array_sum(double[] word_vec, double[] sentence_vector){
         double[] sum = new double[word_vec.length];
 
         for (int i = 0; i < word_vec.length; i++) {
@@ -181,7 +181,7 @@ public class Word2VecSimilarity {
         return sum;
     }
 
-    public double[] double_array_avg(double[] sentence_vector, int size){
+    private double[] double_array_avg(double[] sentence_vector, int size){
         double[] avg = new double[sentence_vector.length];
         for (int i=0; i < avg.length; i++) {
             avg[i] = sentence_vector[i] / size;
@@ -189,7 +189,7 @@ public class Word2VecSimilarity {
         return avg;
     }
 
-    public void appendToCsv(List<Double> cosineScores, String columnName) throws IOException {
+    private void appendToCsv(List<Double> cosineScores, String columnName) throws IOException {
 
         BufferedReader br=null;
         BufferedWriter bw=null;

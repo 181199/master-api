@@ -21,96 +21,72 @@ import java.util.regex.Pattern;
 
 public class FeaturesWord2Vec {
 
-    private static Logger log = LoggerFactory.getLogger(FeaturesWord2Vec.class);
+    private String modelFile;
+    private String newFeatureFile;
+    private int numWords;
 
-    public static String dataLocalPath;
+    public static class Builder {
 
-    private static StringBuilder builder;
+        private String modelFile;
+        private String newFeatureFile;
+        private int numWords = 100;
 
-    public static void main(String[] args) throws Exception {
-        String file = "/Users/anja/Desktop/master/api/files/sources/cve.csv";
+        public Builder(){
+        }
 
-        createWord2VecModel(file,"./files/cve_word2vec_model.txt", 1, 100, 100, 42, 5);
+        public FeaturesWord2Vec.Builder modelFile(String modelFile) {
+            this.modelFile = modelFile;
+            return this;
+        }
 
-        //saveWordsToFile("/Users/anja/Desktop/master/api/files/features/cve_word2vec_model.txt", "/Users/anja/Desktop/master/api/files/features/cveFeaturesWord2Vec.txt", 200);
-    }
+        public FeaturesWord2Vec.Builder newFeatureFile(String newFeatureFile) {
+            this.newFeatureFile = newFeatureFile;
+            return this;
+        }
 
-    public static void createWord2VecModel(String file, String modelFile, int minWordFrequency, int iterations, int layerSize, int seed, int windowSize) throws FileNotFoundException {
-        createCleanedTextFile(file, "./files/sentences_cleaned.txt");
-        String filePath = new File(dataLocalPath,"./files/sentences_cleaned.txt").getAbsolutePath();
+        public FeaturesWord2Vec.Builder numWords(int numWords) {
+            this.numWords = numWords;
+            return this;
+        }
 
-        log.info("Load & Vectorize Sentences....");
-        // Strip white space before and after for each line
-        SentenceIterator iter = new BasicLineIterator(filePath);
-        // Split on white spaces in the line to get words
-        TokenizerFactory t = new DefaultTokenizerFactory();
+        public FeaturesWord2Vec build() {
+            FeaturesWord2Vec featuresWord2Vec = new FeaturesWord2Vec();
+            featuresWord2Vec.modelFile = this.modelFile;
+            featuresWord2Vec.newFeatureFile = this.newFeatureFile;
+            featuresWord2Vec.numWords = this.numWords;
 
-        t.setTokenPreProcessor(new CommonPreprocessor());
-
-        log.info("Building model....");
-        Word2Vec vec = new Word2Vec.Builder()
-                .minWordFrequency(minWordFrequency)
-                .iterations(iterations)
-                .layerSize(layerSize)
-                .seed(seed)
-                .windowSize(windowSize)
-                .iterate(iter)
-                .tokenizerFactory(t)
-                .build();
-
-        log.info("Fitting Word2Vec model....");
-        vec.fit();
-
-        log.info("Writing word vectors to text file....");
-
-        // saving the model
-        WordVectorSerializer.writeWord2VecModel(vec, modelFile);
-    }
-
-    public static void createCleanedTextFile(String infile, String outfile) {
-
-        try(BufferedWriter bw = new BufferedWriter(new FileWriter(outfile))){
-
-            try(BufferedReader br = new BufferedReader(new FileReader(infile))){
-                String line = "";
-                while((line=br.readLine())!=null) {
-                    String[] cols = line.split(PropertySettings.SEPARATOR);
-                    String cleaned = new Cleanup().cleanText(cols[1]);
-                    bw.write(cleaned+"\n");
-                }
-
-            }catch(Exception e) {
-                e.printStackTrace();
-            }
-
-        }catch(Exception e) {
-            //
+            return featuresWord2Vec;
         }
     }
 
-    public static void saveWordsToFile(String word2Vec, String newFile, int numWords) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
-        Word2VecSimilarity w = new Word2VecSimilarity();
-        Word2Vec model = w.getWord2Vec(word2Vec);
+    private FeaturesWord2Vec(){}
 
-        List<String> stopwords = Arrays.asList("i", "me", "my", "myself", "we", "our", "ours", "ourselves", "you", "your", "yours", "yourself", "yourselves", "he", "him", "his", "himself", "she", "her", "hers", "herself", "it", "its", "itself", "they", "them", "their", "theirs", "themselves", "what", "which", "who", "whom", "this", "that", "these", "those", "am", "is", "are", "was", "were", "be", "been", "being", "have", "has", "had", "having", "do", "does", "did", "doing", "a", "an", "the", "and", "but", "if", "or", "because", "as", "until", "while", "of", "at", "by", "for", "with", "about", "against", "between", "into", "through", "during", "before", "after", "above", "below", "to", "from", "up", "down", "in", "out", "on", "off", "over", "under", "again", "further", "then", "once", "here", "there", "when", "where", "why", "how", "all", "any", "both", "each", "few", "more", "most", "other", "some", "such", "no", "nor", "not", "only", "own", "same", "so", "than", "too", "very", "s", "t", "can", "will", "just", "don", "should", "now");
+    public void run() throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+        FeaturesWord2VecHelper ft = new FeaturesWord2VecHelper(this);
+        ft.saveWordsToFile();
+    }
 
-        PrintWriter pw = null;
-        try {
-            pw = new PrintWriter(new File(newFile));
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
+    public String getModelFile() {
+        return modelFile;
+    }
 
-        builder = new StringBuilder();
+    public void setModelFile(String modelFile) {
+        this.modelFile = modelFile;
+    }
 
-        for(int i = 0; i < numWords; i++) {
-            String word = model.vocab().wordAtIndex(i);
-            if(!stopwords.contains(word) && word.length() > 1) {
-                builder.append(word + "\n");
-            }
-        }
+    public String getNewFeatureFile() {
+        return newFeatureFile;
+    }
 
-        pw.write(builder.toString());
-        pw.close();
+    public void setNewFeatureFile(String newFeatureFile) {
+        this.newFeatureFile = newFeatureFile;
+    }
+
+    public int getNumWords() {
+        return numWords;
+    }
+
+    public void setNumWords(int numWords) {
+        this.numWords = numWords;
     }
 }

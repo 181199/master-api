@@ -7,6 +7,7 @@ public class Bug {
     String description;
     String title;
     String date;
+    String bug;
 
     public Bug(int security, String id, String description, String title, String date) {
         this.security = security;
@@ -14,6 +15,11 @@ public class Bug {
         this.description = description;
         this.title = title;
         this.date = date;
+    }
+
+    public Bug(String bug, String description){
+        this.bug = bug;
+        this.description = description;
     }
 
     public int getSecurity() {
@@ -54,5 +60,13 @@ public class Bug {
 
     public void setDate(String date) {
         this.date = date;
+    }
+
+    public String getBug() {
+        return bug;
+    }
+
+    public void setBug(String bug) {
+        this.bug = bug;
     }
 }

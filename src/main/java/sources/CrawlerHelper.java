@@ -3,7 +3,6 @@ package sources;
 import com.gargoylesoftware.htmlunit.WebClient;
 import com.gargoylesoftware.htmlunit.html.*;
 import machinelearning.utils.PropertySettings;
-import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -337,6 +336,10 @@ public class CrawlerHelper {
     }
 
     public void queryProgramcreek() throws IOException {
+
+        if(crawler.getTags().isEmpty()){
+            throw new RuntimeException("Tag for search query must be set.");
+        }
 
         PrintWriter pw = null;
         try {

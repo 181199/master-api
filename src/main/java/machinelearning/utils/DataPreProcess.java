@@ -18,16 +18,7 @@ import java.util.regex.Pattern;
  */
 public class DataPreProcess {
 
-    private static String path = "./files/experiments/AU/";
-
-	/**
-	 *
-	 */
-	public DataPreProcess() {
-		// TODO Auto-generated constructor stub
-	}
-
-	public static void loadFileToARFF(String file, String newFile) {
+	public void loadFileToARFF(String file, String newFile) {
 		// create a your own arff file from the polarity data. This must contain both the neg and the pos dataset
 		File out = new File(newFile);
 		File fin = new File(file);
@@ -46,7 +37,7 @@ public class DataPreProcess {
 		readWriteFile(fin.getAbsolutePath(),out.getAbsolutePath());
 	}
 	
-	private static void writeHeader(String header, String outfile) {
+	private void writeHeader(String header, String outfile) {
 		
 		try(BufferedWriter bw = new BufferedWriter(new FileWriter(outfile))){
 			
@@ -56,7 +47,7 @@ public class DataPreProcess {
 		}
 	}
 	
-	private static void readWriteFile(String path, String outfile) {
+	private void readWriteFile(String path, String outfile) {
 		
 		try(BufferedWriter bw = new BufferedWriter(new FileWriter(outfile, true))){
 			
@@ -80,7 +71,7 @@ public class DataPreProcess {
 		}		
 	}
 
-	public static void cleanFile(String path, String outfile){
+	public void cleanFile(String path, String outfile){
         try(BufferedWriter bw = new BufferedWriter(new FileWriter(outfile, true))){
 
             try(BufferedReader br = new BufferedReader(new FileReader(path))){
@@ -105,7 +96,7 @@ public class DataPreProcess {
         }
     }
 
-    public static void splitDataset(String source, String data, String questions, int i){
+    public void splitDataset(String source, String data, String questions, int i){
         try(BufferedWriter bw = new BufferedWriter(new FileWriter("files/experiments/" + data + "/datasets/" + data + "_" + questions + "_" + source + "_SR_0.4_" + i + "00_tfidf.csv", false))){
             try(BufferedWriter br = new BufferedWriter(new FileWriter("files/experiments/" + data + "/datasets/" + data + "_" + questions + "_" + source + "_SR_0.4_" + i + "00_word2vec.csv", false))){
                 try(BufferedWriter bt = new BufferedWriter(new FileWriter("files/experiments/" + data + "/datasets/" + data + "_" + questions + "_" + source + "_SR_0.4_" + i + "00_avg.csv", false))) {
@@ -145,7 +136,7 @@ public class DataPreProcess {
         }
     }
 
-    public static void combineFiles(String data, String questions, int numFeatures) {
+    public void combineFiles(String data, String questions, int numFeatures) {
 
         Set<String> records = new HashSet<>();
 
@@ -182,7 +173,7 @@ public class DataPreProcess {
         }
     }
 
-    public static void splitDatasetAll(String source, String data, String questions, int i){
+    public void splitDatasetAll(String source, String data, String questions, int i){
 
         Set<String> tfidf = new HashSet<>();
         Set<String> w2v = new HashSet<>();

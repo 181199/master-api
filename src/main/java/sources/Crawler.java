@@ -22,12 +22,12 @@ public class Crawler {
 
     public static class Builder {
 
-        private String source = Crawler.CVE; //standard
+        private String source = Crawler.CVE; //default
         private String newFile;
         private int numQueries = 100;
         private int year = 2020;
         private String tags;
-        private String codeLanguage;
+        private String codeLanguage = Crawler.JAVA; //default
 
         public Builder(){
         }

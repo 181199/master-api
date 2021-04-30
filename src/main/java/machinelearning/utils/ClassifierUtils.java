@@ -1,8 +1,5 @@
 package machinelearning.utils;
 
-import java.io.FileNotFoundException;
-import java.io.PrintWriter;
-
 public class ClassifierUtils {
 
     public static void printResults(double TP, double TN, double FP, double FN, double recall, double precision, double fmeasure, double gmeasure, double pf, double aucroc){

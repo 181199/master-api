@@ -35,6 +35,7 @@ import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
 
 import machinelearning.utils.Cleanup;
+import similarity.CosineSimilarity;
 import similarity.TFIDFSimilarity;
 import similarity.Word2VecSimilarity;
 
@@ -619,7 +620,7 @@ public class StackExchangeAPIHelper extends SSLConfiguration {
         double score = 0.0;
         double cosine = 0.0;
         for (int k = 0; k < tfidfDocsVector.size(); k++) {
-            cosine = d.getCosineSimilarityTwoDocuments(cleanTextDoc, tfidfDocsVector.get(k));
+            cosine = new CosineSimilarity().cosineSimilarity(cleanTextDoc, tfidfDocsVector.get(k));
 
             if (cosine > score) {
                 score = cosine;
