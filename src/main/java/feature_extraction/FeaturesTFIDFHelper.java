@@ -228,7 +228,7 @@ public class FeaturesTFIDFHelper {
 
         List<String> features = getFeatures(featuresTFIDF.getNumFeatures());
 
-        PrintWriter pw = new PrintWriter(featuresTFIDF.getNewFile());
+        PrintWriter pw = new PrintWriter(featuresTFIDF.getNewFeatureFile());
         for(int i = 0; i < features.size(); i++){
             pw.append(features.get(i) + "\n");
         }
