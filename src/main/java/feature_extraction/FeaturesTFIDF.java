@@ -1,26 +1,7 @@
 package feature_extraction;
 
-import java.io.BufferedReader;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
-import machinelearning.utils.PropertySettings;
-import sources.Crawler;
-import sources.CrawlerHelper;
-import weka.core.stemmers.SnowballStemmer;
-import weka.core.stemmers.Stemmer;
+import java.io.IOException;
 
 /**
  * @author tdoy
@@ -35,9 +16,9 @@ public class FeaturesTFIDF {
 
     public static class Builder {
 
-        private String dataFile;
-        private String stopwordsFile;
-        private String newFeatureFile;
+        private String dataFile = "";
+        private String stopwordsFile = "";
+        private String newFeatureFile = "";
         private int numFeatures = 100; // default
 
         public Builder(){
@@ -76,7 +57,7 @@ public class FeaturesTFIDF {
 
     private FeaturesTFIDF(){}
 
-    public void run() throws IOException {
+    public void run() throws Exception {
         FeaturesTFIDFHelper ft = new FeaturesTFIDFHelper(this);
         ft.createFeatureFile();
     }

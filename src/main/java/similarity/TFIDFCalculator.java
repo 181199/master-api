@@ -1,10 +1,15 @@
 package similarity;
 
-import java.util.Arrays;
 import java.util.List;
 
 public class TFIDFCalculator {
 
+    /**
+     * calculates term frequency
+     * @param doc array of strings represents the dataset
+     * @param term String represents a term
+     * @return term frequency of term in documents
+     */
     public static double tf(String[] doc, String term) {
         double result = 0;
         for (String word : doc) {
@@ -14,6 +19,12 @@ public class TFIDFCalculator {
         return result / doc.length;
     }
 
+    /**
+     * calculates boolean term frequency
+     * @param doc array of strings represents the dataset
+     * @param term String represents a term
+     * @return boolean term frequency of term in documents
+     */
     public static double booleantf(String[] doc, String term) {
         for (String word : doc) {
             if (term.equalsIgnoreCase(word))
@@ -22,10 +33,22 @@ public class TFIDFCalculator {
         return 0;
     }
 
+    /**
+     * calculates normalized term frequency
+     * @param doc array of strings represents the dataset
+     * @param term String represents a term
+     * @return normalized term frequency of term in documents
+     */
     public static double ntf(String[] doc, String term) {
         return (0.5 + ((0.5*tf(doc, term))/maxtf(doc, term)));
     }
 
+    /**
+     * calculates max term frequency
+     * @param doc array of strings represents the dataset
+     * @param term String represents a term
+     * @return max term frequency of term in documents
+     */
     public static double maxtf(String[] doc, String term){
         double max = 0;
         double result = 0;
@@ -60,6 +83,13 @@ public class TFIDFCalculator {
     }
 
     /**
+     * calculates tf-idf
+     * @param doc array of strings represents the dataset
+     * @param docs list of list of strings represents the dataset
+     * @param term String represents a term
+     * @return tf-idf
+     */
+    /**
      * @param doc  a text document
      * @param docs all documents
      * @param term term
@@ -69,6 +99,13 @@ public class TFIDFCalculator {
         return tf(doc, term) * idf(docs, term);
     }
 
+    /**
+     * calculates normalized tf-idf
+     * @param doc array of strings represents the dataset
+     * @param docs list of list of strings represents the dataset
+     * @param term String represents a term
+     * @return normalized tf-idf
+     */
     public double ntfIdf(String[] doc, List<String[]> docs, String term) {
         return ntf(doc, term) * idf(docs, term);
     }

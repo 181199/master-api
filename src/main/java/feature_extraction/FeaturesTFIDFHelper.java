@@ -1,6 +1,6 @@
 package feature_extraction;
 
-import machinelearning.utils.PropertySettings;
+import machinelearning.utility.PropertySettings;
 import weka.core.stemmers.SnowballStemmer;
 import weka.core.stemmers.Stemmer;
 
@@ -218,7 +218,18 @@ public class FeaturesTFIDFHelper {
         return terms;
     }
 
-    public void createFeatureFile() throws IOException {
+    /**
+     * create txt file with collected features
+     */
+    public void createFeatureFile() throws Exception {
+
+        if(featuresTFIDF.getStopwordsFile().isEmpty()){
+            throw new Exception("Stopwords file must be set.");
+        } else if (featuresTFIDF.getDataFile().isEmpty()){
+            throw new Exception("Data file file must be set.");
+        } else if (featuresTFIDF.getNewFeatureFile().isEmpty()){
+            throw new Exception("New file name must be set.");
+        }
 
         List<String> stops = readStopwords(featuresTFIDF.getStopwordsFile());
         readData(featuresTFIDF.getDataFile(), true);

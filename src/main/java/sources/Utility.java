@@ -10,7 +10,7 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
 
-import machinelearning.utils.PropertySettings;
+import machinelearning.utility.PropertySettings;
 import similarity.TFIDFSimilarity;
 
 
@@ -52,7 +52,7 @@ public class Utility {
 	/**
 	 * if num_of_feature = n then we will collect n by n vector
 	 * @param tfidfVecFile
-	 * @param dim
+	 * @param num_features
 	 * @return List<double[]> tFIDFVec
 	 * @throws IOException
 	 */

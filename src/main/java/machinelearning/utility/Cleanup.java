@@ -1,4 +1,4 @@
-package machinelearning.utils;
+package machinelearning.utility;
 
 import org.deeplearning4j.text.stopwords.StopWords;
 
@@ -9,6 +9,11 @@ import java.util.stream.Collectors;
 
 public class Cleanup {
 
+    /**
+     * cleans text of symbols and returns string collection
+     * @param text
+     * @return Collection<String> labels
+     */
     public Collection<String> normalizeText(String text){
         Pattern charsPunctuationPattern = Pattern.compile("[\\d:,\"\'\\`\\_\\|?!\n\r@;]+");
         String input_text = charsPunctuationPattern.matcher(text.trim().toLowerCase()).replaceAll("");
@@ -23,7 +28,11 @@ public class Cleanup {
         return labels;
     }
 
-    // use the same text cleaning function as above for creating our word2vec dataset for the NN
+    /**
+     * cleans text of symbols
+     * @param text
+     * @return String input_text
+     */
     public String cleanText(String text){
         Pattern charsPunctuationPattern = Pattern.compile("[\\d:,\"\'\\`\\_\\|?!\n\r@;]+");
         String input_text = charsPunctuationPattern.matcher(text.trim().toLowerCase()).replaceAll("");

@@ -1,7 +1,7 @@
 package feature_extraction;
 
-import machinelearning.utils.Cleanup;
-import machinelearning.utils.PropertySettings;
+import machinelearning.utility.Cleanup;
+import machinelearning.utility.PropertySettings;
 import org.deeplearning4j.models.embeddings.loader.WordVectorSerializer;
 import org.deeplearning4j.models.word2vec.Word2Vec;
 import org.deeplearning4j.text.sentenceiterator.BasicLineIterator;
@@ -25,7 +25,17 @@ public class Word2VecModelHelper {
         this.word2VecModel = word2VecModel;
     }
 
-    public void createWord2VecModel() throws FileNotFoundException {
+    /**
+     * create word2vec model from data file
+     */
+    public void createWord2VecModel() throws Exception {
+
+        if(word2VecModel.getFile().isEmpty()){
+            throw new Exception("Data file must be set.");
+        } else if (word2VecModel.getNewModelFile().isEmpty()){
+            throw new Exception("New model file name must be set.");
+        }
+
         createCleanedTextFile(word2VecModel.getFile(), word2VecModel.getFile().substring(0,word2VecModel.getFile().length()-4) + "_sentences.txt");
         String filePath = new File(dataLocalPath,word2VecModel.getFile().substring(0,word2VecModel.getFile().length()-4) + "_sentences.txt").getAbsolutePath();
 
@@ -54,7 +64,7 @@ public class Word2VecModelHelper {
         log.info("Writing word vectors to text file....");
 
         // saving the model
-        WordVectorSerializer.writeWord2VecModel(vec, word2VecModel.getModelFile());
+        WordVectorSerializer.writeWord2VecModel(vec, word2VecModel.getNewModelFile());
     }
 
     private static void createCleanedTextFile(String infile, String outfile) {
@@ -74,7 +84,7 @@ public class Word2VecModelHelper {
             }
 
         }catch(Exception e) {
-            //
+            e.printStackTrace();
         }
     }
 }

@@ -10,7 +10,6 @@ public class Crawler {
     public static final String PROGRAMCREEK = "PROGRAMCREEK";
     public static final String JAVA = "java-api-examples";
     public static final String CPP = "cpp";
-    //public static final String PYTHON = "python";
     public static final String SCALA = "scala";
 
     private String source;
@@ -23,10 +22,10 @@ public class Crawler {
     public static class Builder {
 
         private String source = Crawler.CVE; //default
-        private String newFile;
+        private String newFile = "";
         private int numQueries = 100;
         private int year = 2020;
-        private String tags;
+        private String tags = "";
         private String codeLanguage = Crawler.JAVA; //default
 
         public Builder(){
@@ -78,7 +77,7 @@ public class Crawler {
 
     private Crawler(){}
 
-    public void run() throws IOException {
+    public void run() throws Exception {
         CrawlerHelper ch = new CrawlerHelper(this);
         if (this.source.equals(Crawler.CVE)) {
             ch.queryCVE();

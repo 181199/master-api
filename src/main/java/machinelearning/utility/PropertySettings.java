@@ -1,7 +1,6 @@
-package machinelearning.utils;
+package machinelearning.utility;
 
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
@@ -15,7 +14,12 @@ public class PropertySettings {
     public static String SEPARATOR = ";";
     public static String STACKEXCHANGE = "2.2";
     public static String SITE = "stackoverflow";
+    public static String KEY = "IT8vJtd)vD02vi1lzs5mHg((";
 
+    /**
+     * loads all parameters in configurations file
+     * must be called before other methods in API
+     */
     public void load() {
 
         try (InputStream input = new FileInputStream("./config.properties")) {
@@ -33,8 +37,7 @@ public class PropertySettings {
             SEPARATOR = prop.getProperty("SEPARATOR");
             STACKEXCHANGE = prop.getProperty("STACKEXCHANGE");
             SITE = prop.getProperty("SITE");
-
-            System.out.println(SEPARATOR);
+            KEY = prop.getProperty("KEY");
 
         } catch (IOException ex) {
             ex.printStackTrace();

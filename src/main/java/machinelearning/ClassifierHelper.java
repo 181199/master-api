@@ -1,8 +1,8 @@
 package machinelearning;
 
 import machinelearning.classifiers.*;
-import machinelearning.utils.MyStopwordsHandler;
-import machinelearning.utils.PropertySettings;
+import machinelearning.utility.MyStopwordsHandler;
+import machinelearning.utility.PropertySettings;
 import org.datavec.api.records.reader.RecordReader;
 import org.datavec.api.records.reader.impl.csv.CSVRecordReader;
 import org.datavec.api.split.FileSplit;
@@ -25,9 +25,6 @@ import org.nd4j.linalg.dataset.SplitTestAndTrain;
 import org.nd4j.linalg.dataset.api.iterator.DataSetIterator;
 import org.nd4j.linalg.dataset.api.preprocessor.DataNormalization;
 import org.nd4j.linalg.dataset.api.preprocessor.NormalizerStandardize;
-import org.nd4j.linalg.learning.config.AdaDelta;
-import org.nd4j.linalg.learning.config.Adam;
-import org.nd4j.linalg.learning.config.Nesterovs;
 import org.nd4j.linalg.learning.config.Sgd;
 import org.nd4j.linalg.lossfunctions.LossFunctions;
 import weka.core.Debug;
@@ -51,7 +48,18 @@ public class ClassifierHelper {
         this.classifier = classifier;
     }
 
+    /**
+     * classifies dataset
+     */
     public void classify() throws Exception {
+
+        if(classifier.getDataset().isEmpty()){
+            throw new Exception("Dataset file must be set.");
+        } else if (classifier.getFeatures().isEmpty()){
+            throw new Exception("Feature file must be set.");
+        } else if (classifier.getModel().isEmpty()){
+            throw new Exception("Model file must be set.");
+        }
 
         Instances testing = loadDataset(classifier.getDataset());
 
@@ -98,7 +106,18 @@ public class ClassifierHelper {
         }
     }
 
+    /**
+     * creates classification model
+     */
     public void createModel() throws Exception {
+
+        if(classifier.getDataset().isEmpty()){
+            throw new Exception("Dataset file must be set.");
+        } else if (classifier.getFeatures().isEmpty()){
+            throw new Exception("Feature file must be set.");
+        } else if (classifier.getSaveModelPath().isEmpty()){
+            throw new Exception("New model file must be set.");
+        }
 
         Instances data = loadDataset(classifier.getDataset());
 
@@ -157,6 +176,9 @@ public class ClassifierHelper {
         }
     }
 
+    /**
+     * loads arff dataset
+     */
     private static Instances loadDataset(String path) {
         Instances dataset = null;
         try {
@@ -171,7 +193,17 @@ public class ClassifierHelper {
         return dataset;
     }
 
-    public void classifyCNN() throws IOException, InterruptedException {
+    /**
+     * CNN classifies dataset
+     */
+    public void classifyCNN() throws Exception {
+
+        if(classifier.getDataset().isEmpty()){
+            throw new Exception("Dataset file must be set.");
+        } else if (classifier.getModel().isEmpty()){
+            throw new Exception("Model file must be set.");
+        }
+
         DataSet allData = new DataSet();
         try (RecordReader recordReader = new CSVRecordReader(1, PropertySettings.SEPARATOR)) {
             recordReader.initialize(new FileSplit(new File(classifier.getDataset())));
@@ -213,7 +245,17 @@ public class ClassifierHelper {
         System.out.println("G-measure: " + gmeasure + "\n");
     }
 
-    public void createCNNModel() throws IOException, InterruptedException {
+    /**
+     * creates CNN model
+     */
+    public void createCNNModel() throws Exception {
+
+        if(classifier.getDataset().isEmpty()){
+            throw new Exception("Dataset file must be set.");
+        } else if (classifier.getSaveModelPath().isEmpty()){
+            throw new Exception("New model file must be set.");
+        }
+
         DataSet allData;
         try (RecordReader recordReader = new CSVRecordReader(1, PropertySettings.SEPARATOR)) {
             recordReader.initialize(new FileSplit(new File(classifier.getDataset())));
@@ -294,7 +336,23 @@ public class ClassifierHelper {
         ModelSerializer.writeModel(model, classifier.getSaveModelPath(), true);
     }
 
+    /**
+     * classifies dataset and prints predictions to file
+     */
     public void classifyAndPrint() throws Exception {
+
+        if(classifier.getDataset().isEmpty()){
+            throw new Exception("Dataset file must be set.");
+        } else if (classifier.getFeatures().isEmpty()){
+            throw new Exception("Feature file must be set.");
+        } else if (classifier.getModel().isEmpty()){
+            throw new Exception("Model file must be set.");
+        } else if (classifier.getDatasetFileCsv().isEmpty()){
+            throw new Exception("Dataset file in .csv format must be set.");
+        } else if(classifier.getLearner().equals(Classifier.CNN)){
+            throw new Exception("This function is not supported for the CNN algorithm.");
+        }
+
         Instances testing = loadDataset(classifier.getDataset());
 
         NGramTokenizer tokenizer = new NGramTokenizer();    // get a tokenizer
@@ -340,6 +398,9 @@ public class ClassifierHelper {
         }
     }
 
+    /**
+     * sets the result parameters
+     */
     private void setResult(double TP, double TN, double FP, double FN, double recall, double precision, double fmeasure, double gmeasure, double pf, double aucroc) {
         classifier.setTP(TP);
         classifier.setTN(TN);

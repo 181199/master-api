@@ -15,11 +15,8 @@ public class Word2VecModel {
 
     public static class Builder {
 
-        private String file;
-        private String newModelFile;
-        private String newFeatureFile;
-        private boolean createModel = false;
-        private boolean getFeatureWords = false;
+        private String file = "";
+        private String newModelFile = "";
         private int minWordFrequency = 1;
         private int iterations = 100;
         private int layerSize = 100;
@@ -75,7 +72,7 @@ public class Word2VecModel {
 
     private Word2VecModel(){}
 
-    public void run() throws IOException, NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+    public void run() throws Exception {
         Word2VecModelHelper ft = new Word2VecModelHelper(this);
         ft.createWord2VecModel();
     }

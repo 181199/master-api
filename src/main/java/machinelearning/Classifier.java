@@ -41,10 +41,10 @@ public class Classifier {
     public static class Builder {
 
         private String learner = Classifier.RANDOMFOREST; // standard
-        private String dataset;
-        private String features;
-        private String model;
-        private String saveModelPath;
+        private String dataset = "";
+        private String features = "";
+        private String model = "";
+        private String saveModelPath = "";
         private boolean createModel = false;
         private int numFolds = 5;
         private boolean stem = false;
@@ -52,7 +52,7 @@ public class Classifier {
         private int classesCount = 2;
         private int featureCount = 99;
         private boolean printPreds = false;
-        private String datasetFileCsv;
+        private String datasetFileCsv = "";
         private int datasetSize;
 
         private double recall;

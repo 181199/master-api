@@ -1,11 +1,9 @@
 package machinelearning.classifiers;
 
-import machinelearning.utils.ClassifierUtils;
-import machinelearning.utils.PropertySettings;
+import machinelearning.utility.ClassifierUtils;
+import machinelearning.utility.PropertySettings;
 import weka.classifiers.Evaluation;
 import weka.classifiers.bayes.NaiveBayes;
-import weka.classifiers.meta.FilteredClassifier;
-import weka.classifiers.trees.RandomForest;
 import weka.core.Instances;
 
 import java.io.BufferedReader;
@@ -29,6 +27,12 @@ public class NaiveBayesClassifier {
     public NaiveBayesClassifier(){
     }
 
+    /**
+     * classifies instances
+     * @param test
+     * @param model
+     * @returns Collection<String> labels
+     */
     public static void classifyModel(Instances test, String model) throws Exception {
         // Naive bayes classifier
         NaiveBayes classifier = (NaiveBayes) weka.core.SerializationHelper.read(model);
@@ -39,7 +43,7 @@ public class NaiveBayesClassifier {
         // evaluate classifier on test-set
         eval.evaluateModel(classifier, test);
 
-        recall = eval.recall(1)*100;;
+        recall = eval.recall(1)*100;
         precision = eval.precision(1)*100;
         fmeasure = eval.fMeasure(1)*100;
         gmeasure = (2 * eval.recall(1)*100*(100 - eval.falsePositiveRate(1)*100))/(eval.recall(1)*100 + (100 - eval.falsePositiveRate(1)*100));
@@ -53,6 +57,13 @@ public class NaiveBayesClassifier {
         ClassifierUtils.printResults(TP, TN, FP, FN, recall, precision, fmeasure, gmeasure, pf, aucroc);
     }
 
+    /**
+     * creates classification model
+     * @param train
+     * @param test
+     * @param filePath
+     * @returns Collection<String> labels
+     */
     public static void classify(Instances train, Instances test, String filePath) throws Exception {
         // Naive bayes classifier
         NaiveBayes classifier = new NaiveBayes();
@@ -65,7 +76,7 @@ public class NaiveBayesClassifier {
         // evaluate classifier on test-set
         eval.evaluateModel(classifier, test);
 
-        recall = eval.recall(1)*100;;
+        recall = eval.recall(1)*100;
         precision = eval.precision(1)*100;
         fmeasure = eval.fMeasure(1)*100;
         gmeasure = (2 * eval.recall(1)*100*(100 - eval.falsePositiveRate(1)*100))/(eval.recall(1)*100 + (100 - eval.falsePositiveRate(1)*100));
@@ -81,6 +92,14 @@ public class NaiveBayesClassifier {
         weka.core.SerializationHelper.write(filePath, classifier);
     }
 
+    /**
+     * classifies instances and prints results to file
+     * @param dataset
+     * @param test
+     * @param model
+     * @param outfile
+     * @returns Collection<String> labels
+     */
     public void classifyAndPrint(String dataset, Instances test, String model, String outfile) throws Exception {
         // Random forest classifier
         NaiveBayes classifier = (NaiveBayes) weka.core.SerializationHelper.read(model);
@@ -91,7 +110,7 @@ public class NaiveBayesClassifier {
         // evaluate classifier on test-set
         eval.evaluateModel(classifier, test);
 
-        recall = eval.recall(1)*100;;
+        recall = eval.recall(1)*100;
         precision = eval.precision(1)*100;
         fmeasure = eval.fMeasure(1)*100;
         gmeasure = (2 * eval.recall(1)*100*(100 - eval.falsePositiveRate(1)*100))/(eval.recall(1)*100 + (100 - eval.falsePositiveRate(1)*100));

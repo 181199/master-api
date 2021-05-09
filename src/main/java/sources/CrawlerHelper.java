@@ -2,7 +2,7 @@ package sources;
 
 import com.gargoylesoftware.htmlunit.WebClient;
 import com.gargoylesoftware.htmlunit.html.*;
-import machinelearning.utils.PropertySettings;
+import machinelearning.utility.PropertySettings;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -10,7 +10,6 @@ import org.jsoup.select.Elements;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.URLEncoder;
 import java.text.DecimalFormat;
@@ -26,7 +25,15 @@ public class CrawlerHelper {
         this.crawler = crawler;
     }
 
-    public void queryCVE(){
+    /**
+     * Method to crawl CVE
+     */
+    public void queryCVE() throws Exception {
+
+        if(crawler.getNewFile().isEmpty()){
+            throw new Exception("New file name must be set.");
+        }
+
         PrintWriter pw = null;
         try {
             pw = new PrintWriter(new File(crawler.getNewFile()));
@@ -61,11 +68,9 @@ public class CrawlerHelper {
                 }
 
                 String id = "CVE-" + crawler.getYear() + "-" + decimalFormat.format(number);
-                //System.out.println(id);
 
                 ArrayList<DomText> list = (ArrayList<DomText>) page.getByXPath("//*[@id=\"vulnDetailTableView\"]/tbody/tr/td/div/div[1]/p/text()");
                 final DomText desc = list.get(0);
-                //System.out.println("   Description: " + desc.asText());
 
                 // skip CVE if it is rejected
                 if(desc.asText().contains("** REJECT **")){
@@ -73,35 +78,27 @@ public class CrawlerHelper {
                     continue;
                 }
 
-                //System.out.println("   Type-of-source: Vulnerability Database");
-                //System.out.println("   Type: Vulnerability");
-
                 ArrayList<HtmlSpan> date = (ArrayList<HtmlSpan>) page.getByXPath("//*[@id=\"vulnDetailTableView\"]/tbody/tr/td/div/div[2]/div/span[1]");
                 final HtmlSpan dateText = date.get(0);
-                //System.out.println("   Date: " + dateText.asText());
 
                 ArrayList<HtmlSpan> source = (ArrayList<HtmlSpan>) page.getByXPath("//*[@id=\"vulnDetailTableView\"]/tbody/tr/td/div/div[2]/div/span[3]");
                 final HtmlSpan sourceText = source.get(0);
-                //System.out.println("   Source: " + sourceText.asText());
 
                 String weak = "Not defined";
                 ArrayList<DomText> weaknessList = (ArrayList<DomText>) page.getByXPath("//*[@id=\"vulnTechnicalDetailsDiv\"]/table/tbody/tr/td[2]/text()");
                 if(!weaknessList.isEmpty()) {
                     final DomText weakness = weaknessList.get(0);
                     weak = weakness.asText();
-                    //System.out.println("   Weakness: " + weakness.asText());
                 }
 
                 HtmlAnchor severityRating = null;
                 ArrayList<HtmlAnchor> rating = (ArrayList<HtmlAnchor>) page.getByXPath("//*[@id=\"Cvss3NistCalculatorAnchor\"]");
                 if (!rating.isEmpty()) {
                     severityRating = rating.get(0);
-                    //System.out.println("   Severity-rating: " + severityRating.asText());
                 } else {
                     ArrayList<HtmlAnchor> rating2 = (ArrayList<HtmlAnchor>) page.getByXPath("//*[@id=\"Cvss3CnaCalculatorAnchor\"]");
                     if (!rating2.isEmpty()) {
                         severityRating = rating2.get(0);
-                        //System.out.println("   Severity-rating: " + severityRating.asText());
                     }
                 }
 
@@ -116,21 +113,6 @@ public class CrawlerHelper {
                     score = "No score";
                     severityText = "No severity rating";
                 }
-
-                //System.out.println("   Reference(s):");
-                ArrayList<HtmlElement> listTable = (ArrayList<HtmlElement>) page.getByXPath("//*[@id=\"vulnHyperlinksPanel\"]/table");
-                final HtmlTable tableLinks = (HtmlTable) listTable.get(0);
-                for (final HtmlTableRow row : tableLinks.getRows()) {
-                    //System.out.println("Found match:");
-                    for (final HtmlTableCell cell : row.getCells()) {
-                        if (cell.asText().startsWith("http")) {
-                            //System.out.println("      " + cell.asText());
-                        }
-                    }
-                }
-
-                //System.out.println("   CVE-link: " + "https://cve.mitre.org/cgi-bin/cvename.cgi?name=" + id);
-                //System.out.println();
 
                 builder.append(id + PropertySettings.SEPARATOR);
                 builder.append(desc.asText() + PropertySettings.SEPARATOR);
@@ -154,7 +136,15 @@ public class CrawlerHelper {
         pw.close();
     }
 
-    public void queryCWE(){
+    /**
+     * Method to crawl CWE
+     */
+    public void queryCWE() throws Exception {
+
+        if(crawler.getNewFile().isEmpty()){
+            throw new Exception("New file name must be set.");
+        }
+
         PrintWriter pw = null;
         try {
             pw = new PrintWriter(new File(crawler.getNewFile()));
@@ -210,15 +200,6 @@ public class CrawlerHelper {
                 final DomText desc = list.get(0);
                 System.out.println("   Description: " + desc.asText());
 
-//                String notes = "";
-//                String xpathNotes = "//*[@id=\"oc_" + number + "_Notes\"]/div/div/div";
-//                ArrayList<HtmlDivision> notesList = (ArrayList<HtmlDivision>) page.getByXPath(xpathNotes);
-//                if(!notesList.isEmpty()) {
-//                    final HtmlDivision note = notesList.get(0);
-//                    notes = note.asText();
-//                    System.out.println("   Notes: " + note.asText());
-//                }
-
                 System.out.println("   Type-of-source: Weakness Database");
                 System.out.println("   Type: Weakness");
 
@@ -249,7 +230,15 @@ public class CrawlerHelper {
         pw.close();
     }
 
-    public void queryCAPEC(){
+    /**
+     * Method to crawl CAPEC
+     */
+    public void queryCAPEC() throws Exception {
+
+        if(crawler.getNewFile().isEmpty()){
+            throw new Exception("New file name must be set.");
+        }
+
         PrintWriter pw = null;
         try {
             pw = new PrintWriter(new File(crawler.getNewFile()));
@@ -335,10 +324,15 @@ public class CrawlerHelper {
         pw.close();
     }
 
-    public void queryProgramcreek() throws IOException {
+    /**
+     * Method to crawl ProgramCreek
+     */
+    public void queryProgramcreek() throws Exception {
 
-        if(crawler.getTags().isEmpty()){
-            throw new RuntimeException("Tag for search query must be set.");
+        if(crawler.getNewFile().isEmpty()){
+            throw new Exception("New file name must be set.");
+        } else if(crawler.getTags().isEmpty()){
+            throw new Exception("Tag for search query must be set.");
         }
 
         PrintWriter pw = null;

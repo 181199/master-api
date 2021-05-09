@@ -1,16 +1,6 @@
 package feature_extraction;
 
-import machinelearning.utils.Cleanup;
-import machinelearning.utils.PropertySettings;
-import org.deeplearning4j.models.embeddings.loader.WordVectorSerializer;
 import org.deeplearning4j.models.word2vec.Word2Vec;
-import org.deeplearning4j.text.sentenceiterator.BasicLineIterator;
-import org.deeplearning4j.text.sentenceiterator.SentenceIterator;
-import org.deeplearning4j.text.tokenization.tokenizer.preprocessor.CommonPreprocessor;
-import org.deeplearning4j.text.tokenization.tokenizerfactory.DefaultTokenizerFactory;
-import org.deeplearning4j.text.tokenization.tokenizerfactory.TokenizerFactory;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import similarity.Word2VecSimilarity;
 
 import java.io.*;
@@ -28,7 +18,17 @@ public class FeaturesWord2VecHelper {
         this.featuresWord2Vec = featuresWord2Vec;
     }
 
-    public void saveWordsToFile() throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+    /**
+     * create txt file with word2vec feature words
+     */
+    public void saveWordsToFile() throws Exception {
+
+        if(featuresWord2Vec.getModelFile().isEmpty()){
+            throw new Exception("Model file must be set.");
+        } else if (featuresWord2Vec.getNewFeatureFile().isEmpty()){
+            throw new Exception("New file name must be set.");
+        }
+
         Word2VecSimilarity w = new Word2VecSimilarity();
         Word2Vec model = w.getWord2Vec(featuresWord2Vec.getModelFile());
 

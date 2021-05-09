@@ -2,6 +2,12 @@ package similarity;
 
 public class CosineSimilarity {
 
+    /**
+     * calculates cosine similarity between two vectors
+     * @param docVector1
+     * @param docVector2
+     * @return double cosineSimilarity
+     */
     public double cosineSimilarity(double[] docVector1, double[] docVector2) {
         double dotProduct = 0.0;
         double magnitude1 = 0.0;

@@ -5,7 +5,7 @@ import java.lang.reflect.InvocationTargetException;
 
 public class UsingFeatures {
 
-    public static void main(String[] args) throws IOException, NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+    public static void main(String[] args) throws Exception {
 
         FeaturesTFIDF ft = new FeaturesTFIDF.Builder()
                 .dataFile("files/sources/cwe.csv")

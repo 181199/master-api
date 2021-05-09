@@ -8,7 +8,6 @@ import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 
 import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLException;
 
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.config.CookieSpecs;

@@ -1,23 +1,6 @@
 package feature_extraction;
 
-import machinelearning.utils.Cleanup;
-import machinelearning.utils.PropertySettings;
-import org.deeplearning4j.models.embeddings.loader.WordVectorSerializer;
-import org.deeplearning4j.models.word2vec.Word2Vec;
-import org.deeplearning4j.text.sentenceiterator.BasicLineIterator;
-import org.deeplearning4j.text.sentenceiterator.SentenceIterator;
-import org.deeplearning4j.text.tokenization.tokenizer.preprocessor.CommonPreprocessor;
-import org.deeplearning4j.text.tokenization.tokenizerfactory.DefaultTokenizerFactory;
-import org.deeplearning4j.text.tokenization.tokenizerfactory.TokenizerFactory;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import similarity.Word2VecSimilarity;
-
-import java.io.*;
 import java.lang.reflect.InvocationTargetException;
-import java.util.Arrays;
-import java.util.List;
-import java.util.regex.Pattern;
 
 public class FeaturesWord2Vec {
 
@@ -27,8 +10,8 @@ public class FeaturesWord2Vec {
 
     public static class Builder {
 
-        private String modelFile;
-        private String newFeatureFile;
+        private String modelFile = "";
+        private String newFeatureFile = "";
         private int numWords = 100;
 
         public Builder(){
@@ -61,7 +44,7 @@ public class FeaturesWord2Vec {
 
     private FeaturesWord2Vec(){}
 
-    public void run() throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+    public void run() throws Exception {
         FeaturesWord2VecHelper ft = new FeaturesWord2VecHelper(this);
         ft.saveWordsToFile();
     }

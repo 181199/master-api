@@ -1,4 +1,4 @@
-package machinelearning.utils;
+package machinelearning.utility;
 
 import java.io.*;
 import java.nio.charset.Charset;
@@ -6,11 +6,15 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class MergeFiles {
 
+    /**
+     * merge two files and keep only one header
+     * @param file1
+     * @param file2
+     * @param newFile
+     */
     public static void merge(String file1, String file2, String newFile) throws IOException {
         List<Path> paths = Arrays.asList(Paths.get(file1), Paths.get(file2));
         List<String> mergedLines = getMergedLines(paths);
@@ -18,7 +22,12 @@ public class MergeFiles {
         Files.write(target, mergedLines, Charset.forName("UTF-8"));
     }
 
-    public static List<String> getMergedLines(List<Path> paths) throws IOException {
+    /**
+     * get contents of files for merging
+     * @param paths
+     * @return List<String> mergedLines
+     */
+    private static List<String> getMergedLines(List<Path> paths) throws IOException {
         List<String> mergedLines = new ArrayList<>();
         for (Path p : paths){
             List<String> lines = Files.readAllLines(p, Charset.forName("UTF-8"));
@@ -32,6 +41,12 @@ public class MergeFiles {
         return mergedLines;
     }
 
+    /**
+     * add security label to front of file
+     * @param filePath
+     * @param newFile
+     * @param security true = security, false = not security
+     */
     public static void addSecurityLabel(String filePath, String newFile, boolean security) throws IOException {
         BufferedReader br = null;
         BufferedWriter bw = null;
@@ -50,7 +65,7 @@ public class MergeFiles {
             while ((line = br.readLine()) != null) {
                 String[] cols = line.split(PropertySettings.SEPARATOR);
 
-                if(i == 0){
+                if(i == 0 && PropertySettings.HEADER){
                     // add column for security report (1 = security, 0 != security)
                     bw.write("Security" + PropertySettings.SEPARATOR + line + "\n");
                 } else {
@@ -65,42 +80,6 @@ public class MergeFiles {
                 br.close();
             if (bw != null)
                 bw.close();
-        }
-    }
-
-    public static void fixWord2VecFiles(String directory){
-        try (Stream<Path> walk = Files.walk(Paths.get(directory))) {
-
-            List<String> result = walk.filter(Files::isRegularFile)
-                    .map(x -> x.toString()).collect(Collectors.toList());
-
-            result.forEach(System.out::println);
-
-                for (int i = 0; i < result.size(); i++) {
-
-                    if ((result.get(i).contains("chromium") && !result.get(i).contains("fixed"))) {
-
-                        try (BufferedReader br = new BufferedReader(new FileReader(result.get(i)))) {
-                            String file = result.get(i);
-                            String newFile = file.substring(0, file.length()-4) + "_fixed.csv";
-
-                            try (BufferedWriter bw = new BufferedWriter(new FileWriter(newFile, false))) {
-
-                                //System.out.println("\ufffd");
-
-                                String line = "";
-                                while ((line = br.readLine()) != null) {
-                                    String newLine = line.replace("\ufffd", "0.0");
-                                    bw.write(newLine + "\n");
-                                }
-                            }
-                        }
-                    }
-                }
-
-
-        } catch (IOException e) {
-            e.printStackTrace();
         }
     }
 }

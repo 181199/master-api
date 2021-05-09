@@ -12,7 +12,7 @@ public class UsingStackExchangeAPI {
     /**
      * @param args
      */
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
 
 //		this is an example of how to configure the api for data collection
 //	    
@@ -39,7 +39,7 @@ public class UsingStackExchangeAPI {
                 .security(true)
                 .threshold(0.6)
                 .appendScoreToCsv(true)
-                .pathToStoreResult("./files/experiments/")
+                .pathToStoreResult("./files/")
                 .build();
 
         sed.run(); 						// start to collect data

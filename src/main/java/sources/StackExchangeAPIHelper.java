@@ -7,7 +7,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.io.UnsupportedEncodingException;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URLEncoder;
 import java.security.KeyManagementException;
@@ -21,7 +20,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import machinelearning.utils.PropertySettings;
+import machinelearning.utility.PropertySettings;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
@@ -34,7 +33,7 @@ import org.jsoup.Jsoup;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
 
-import machinelearning.utils.Cleanup;
+import machinelearning.utility.Cleanup;
 import similarity.CosineSimilarity;
 import similarity.TFIDFSimilarity;
 import similarity.Word2VecSimilarity;
@@ -50,7 +49,14 @@ public class StackExchangeAPIHelper extends SSLConfiguration {
 
     }
 
-    public void fetchAll() throws UnsupportedEncodingException, FileNotFoundException {
+    /**
+     * Method to get questions from StackExchange without threshold
+     */
+    public void fetchAll() throws Exception {
+
+        if(sed.getPathToStoreResult().isEmpty()){
+            throw new Exception("Path to store results must be set.");
+        }
 
         StringBuilder builder = new StringBuilder();
         String columnNamesList = "Title" + PropertySettings.SEPARATOR + "Description" + PropertySettings.SEPARATOR + "Id" + PropertySettings.SEPARATOR + "Date";
@@ -191,7 +197,22 @@ public class StackExchangeAPIHelper extends SSLConfiguration {
 
     }
 
-    public void fetch() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException, IOException {
+    /**
+     * Method to get questions from StackExchange with threshold
+     */
+    public void fetch() throws Exception {
+
+        if(sed.getPathToStoreResult().isEmpty()){
+            throw new Exception("Path to store results must be set.");
+        } else if (sed.getTerms() == null){
+            throw new Exception("Feature term list must be set.");
+        } else if (sed.getTfidfVectorFile().isEmpty()){
+            throw new Exception("TF-IDF vector file must be set.");
+        } else if (sed.getSource().isEmpty()){
+            throw new Exception("Source name must be set.");
+        } else if (sed.getSourceDataset().isEmpty()){
+            throw new Exception("Source dataset must be set.");
+        }
 
         // how many StringBuilders do we need?
         List<StringBuilder> builders = getStringBuilders();
@@ -218,7 +239,7 @@ public class StackExchangeAPIHelper extends SSLConfiguration {
 
             model = w.getWord2Vec(sed.getTerms().get(1));					// index 1 is for word2vec (better to change this later)
 
-            w.getSentences(sed.getSourceDataset(), benchmarkSentences);
+            w.getSentences(sed.getSourceDataset(), benchmarkSentences, 1);
 
         }
 
@@ -328,7 +349,7 @@ public class StackExchangeAPIHelper extends SSLConfiguration {
                         counterTfidf = counters.get(0).get(index);
 
                         if(counterTfidf < sed.getNumRecords()) {
-                            tfidf = getTFIDFScore(cleanText, tfidffeatures_i, docsArray, tfidfDocsVector_i, d, sed.getThreshold());
+                            tfidf = getTFIDFScore(cleanText, tfidffeatures_i, docsArray, tfidfDocsVector_i, d);
                             if(sed.isSecurity()) {
                                 if(tfidf >= sed.getThreshold()) {
                                     String method = "tfidf";
@@ -356,7 +377,7 @@ public class StackExchangeAPIHelper extends SSLConfiguration {
 
                             if(counterWord2Vec < sed.getNumRecords()) {
 
-                                w2v = getWord2VecScore(cleanText, benchmarkSentences, input_vectors, model, w, num_features, sed.getThreshold());
+                                w2v = getWord2VecScore(cleanText, benchmarkSentences, input_vectors, model, w, num_features);
 
                                 if(sed.isSecurity()) {
                                     if(w2v >= sed.getThreshold()) {
@@ -430,6 +451,9 @@ public class StackExchangeAPIHelper extends SSLConfiguration {
 
     }
 
+    /**
+     * write results to file
+     */
     private void writeToFile(List<StringBuilder> builders, boolean simUsed) throws FileNotFoundException {
 
         for(int i=1; i<=builders.size(); i++) {
@@ -613,7 +637,7 @@ public class StackExchangeAPIHelper extends SSLConfiguration {
     }
 
 
-    private double getTFIDFScore(String cleanText, List<String> features, List<String[]> docsArray, List<double[]> tfidfDocsVector, TFIDFSimilarity d, double threshold) {
+    private double getTFIDFScore(String cleanText, List<String> features, List<String[]> docsArray, List<double[]> tfidfDocsVector, TFIDFSimilarity d) {
         // check cosine similarity
         double[] cleanTextDoc = d.getDocumentVectors(cleanText, features, docsArray);
 
@@ -625,15 +649,11 @@ public class StackExchangeAPIHelper extends SSLConfiguration {
             if (cosine > score) {
                 score = cosine;
             }
-
-//            if (score >= threshold) {
-//                break;
-//            }
         }
         return score;
     }
 
-    private double getWord2VecScore(String cleanText, List<Collection<String>> benchmarkSentences, List<INDArray> input_vectors, Word2Vec model, Word2VecSimilarity w, int num_features, double threshold) {
+    private double getWord2VecScore(String cleanText, List<Collection<String>> benchmarkSentences, List<INDArray> input_vectors, Word2Vec model, Word2VecSimilarity w, int num_features) {
         Collection<String> sentence = new Cleanup().normalizeText(cleanText);
 
         double score = 0.0;
@@ -649,10 +669,6 @@ public class StackExchangeAPIHelper extends SSLConfiguration {
             if (cosine > score) {
                 score = cosine;
             }
-
-//            if (score >= threshold) {
-//                break;
-//            }
         }
         return score;
     }

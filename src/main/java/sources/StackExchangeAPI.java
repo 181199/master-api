@@ -4,7 +4,7 @@
 package sources;
 
 
-import machinelearning.utils.PropertySettings;
+import machinelearning.utility.PropertySettings;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -50,18 +50,18 @@ public class StackExchangeAPI {
         private String tags = "";
         private String site = "stackoverflow";
         private String api = "https://api.stackexchange.com/" + PropertySettings.STACKEXCHANGE + "/questions";		// must also think of being able to configure an access key
-        private String key = "IT8vJtd)vD02vi1lzs5mHg((";
-        private String source;
-        private String sourceDataset;
+        private String key = PropertySettings.KEY;
+        private String source = "";
+        private String sourceDataset = "";
         private List<String> terms;
-        private String tfidfVectorFile;
+        private String tfidfVectorFile = "";
         private int numFeaturesFactor = 1;			// 5 means, do multiple of 100: 100, 200, 300, 400, 500
         private int numRecords = 1000;				// default. 1000 records
         private boolean onlyQuestion = true;		// default
         private boolean security = true;			// default
         private double threshold = 0.6;				// default
         private boolean appendScoreToCsv = true;	// default
-        private String pathToStoreResult;
+        private String pathToStoreResult = "";
 
         // additional filters
         private int questionThreshold = 0;			// default = 0. Do we want voted questions?
@@ -293,7 +293,7 @@ public class StackExchangeAPI {
     /**
      * call this method to start collecting data
      */
-    public void run() {
+    public void run() throws Exception {
         //
         try {
             StackExchangeAPIHelper api = new StackExchangeAPIHelper(this);

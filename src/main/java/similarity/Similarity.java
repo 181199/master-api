@@ -16,17 +16,23 @@ public class Similarity {
     private String word2vec;
     private int numFeatures;
     private int descriptionIndex;
+    private int numSimilarSources;
+    private double threshold;
+    private boolean getOnlyMostSimilar;
 
     public static class Builder {
 
-        private String file;
-        private String benchmarkDataset;
-        private String features;
-        private String source;
-        private String method;
-        private String word2vec;
-        private int numFeatures;
-        private int descriptionIndex;
+        private String file = "";
+        private String benchmarkDataset = "";
+        private String features = "";
+        private String source = "";
+        private String method = "";
+        private String word2vec = "";
+        private int numFeatures = 0;
+        private int descriptionIndex = -1;
+        private int numSimilarSources = 1; // default
+        private double threshold = 0.6; // default
+        private boolean getOnlyMostSimilar = false;
 
         public Builder(){
         }
@@ -71,6 +77,21 @@ public class Similarity {
             return this;
         }
 
+        public Similarity.Builder numSimilarSources(int numSimilarSources) {
+            this.numSimilarSources = numSimilarSources;
+            return this;
+        }
+
+        public Similarity.Builder threshold(double threshold) {
+            this.threshold = threshold;
+            return this;
+        }
+
+        public Similarity.Builder getOnlyMostSimilar(boolean getOnlyMostSimilar) {
+            this.getOnlyMostSimilar = getOnlyMostSimilar;
+            return this;
+        }
+
         public Similarity build() {
             Similarity similarity = new Similarity();
             similarity.source = this.source;
@@ -81,6 +102,9 @@ public class Similarity {
             similarity.word2vec = this.word2vec;
             similarity.numFeatures = this.numFeatures;
             similarity.descriptionIndex = this.descriptionIndex;
+            similarity.numSimilarSources = this.numSimilarSources;
+            similarity.threshold = this.threshold;
+            similarity.getOnlyMostSimilar = this.getOnlyMostSimilar;
 
             return similarity;
         }
@@ -88,12 +112,16 @@ public class Similarity {
 
     private Similarity(){}
 
-    public void run() throws IOException, NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+    public void run() throws Exception {
         SimilarityHelper sim = new SimilarityHelper(this);
-        if(this.method.equals(Similarity.TFIDF)){
+        if(this.method.equals(Similarity.TFIDF) && getOnlyMostSimilar){
             sim.mostSimilarSourceTFIDF();
-        } else if (this.method.equals(Similarity.Word2Vec)){
+        } else if (this.method.equals(Similarity.Word2Vec) && getOnlyMostSimilar){
             sim.mostSimilarSourceWord2Vec();
+        } else if (this.method.equals(Similarity.TFIDF) && !getOnlyMostSimilar){
+            sim.similarSourcesTFIDF();
+        } else if (this.method.equals(Similarity.Word2Vec) && !getOnlyMostSimilar){
+            sim.similarSourcesWord2Vec();
         }
     }
 
@@ -159,5 +187,29 @@ public class Similarity {
 
     public void setDescriptionIndex(int descriptionIndex) {
         this.descriptionIndex = descriptionIndex;
+    }
+
+    public int getNumSimilarSources() {
+        return numSimilarSources;
+    }
+
+    public void setNumSimilarSources(int numSimilarSources) {
+        this.numSimilarSources = numSimilarSources;
+    }
+
+    public double getThreshold() {
+        return threshold;
+    }
+
+    public void setThreshold(double threshold) {
+        this.threshold = threshold;
+    }
+
+    public boolean isGetOnlyMostSimilar() {
+        return getOnlyMostSimilar;
+    }
+
+    public void setGetOnlyMostSimilar(boolean getOnlyMostSimilar) {
+        this.getOnlyMostSimilar = getOnlyMostSimilar;
     }
 }
